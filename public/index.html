@@ -1,39 +1,41 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Document</title>
-    </head>
 
-    <body>
-        <p id="lechonk"></p>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+</head>
 
-        <input id="input" placeholder="type here" type="text" />
-        <button onclick="check()" id="butone">send</button>
+<body>
+    <p id="lechonk"></p>
 
-        <script>
-            window.check = async function check() {
-                console.log("fgdgf");
-                const input = document.getElementById("input");
+    <input id="input" placeholder="type here" type="text" />
+    <button onclick="check()" id="butone">send</button>
 
-                const url = "http://localhost:3000/groq";
-                const response = await fetch(url, {
-                    method: "POST",
-                    body: input.value,
-                    headers: {
-                        "Content-Type": "application/json; charset=UTF-8",
-                    },
-                });
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                const thing = document.getElementById("lechonk");
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    thing.innerHTML += decoder.decode(value);
-                }
-            };
-        </script>
-    </body>
+    <script>
+        window.check = async function check() {
+            console.log("fgdgf");
+            const input = document.getElementById("input");
+
+            const url = "http://localhost:3000/groq";
+            const response = await fetch(url, {
+                method: "POST",
+                body: input.value,
+                headers: {
+                    "Content-Type": "application/json; charset=UTF-8",
+                },
+            });
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            const thing = document.getElementById("lechonk");
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                thing.innerHTML += decoder.decode(value);
+            }
+        };
+    </script>
+</body>
+
 </html>
