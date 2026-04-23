@@ -3,16 +3,14 @@ import { Parser, HtmlRenderer } from "https://esm.sh/commonmark";
 const parser = new Parser();
 const renderer = new HtmlRenderer();
 
+const apiUrl = `${window.location.origin}/api`;
+
 window.check = async function check() {
     const input = document.getElementById("input");
 
-    const url = "http://localhost:3000/groq";
-    const response = await fetch(url, {
+    const response = await fetch(`${apiUrl}/send-message`, {
         method: "POST",
         body: input.value,
-        headers: {
-            "Content-Type": "application/json; charset=UTF-8",
-        },
     });
     const reader = response.body.getReader();
     const decoder = new TextDecoder();

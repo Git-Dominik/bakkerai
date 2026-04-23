@@ -1,18 +1,24 @@
 {
-  "name": "app",
-  "version": "1.0.50",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
-  },
-  "dependencies": {
-    "@ai-sdk/groq": "^3.0.35",
-    "@elysiajs/static": "^1.4.9",
-    "ai": "^6.0.168",
-    "elysia": "latest"
-  },
-  "devDependencies": {
-    "bun-types": "latest"
-  },
-  "module": "src/index.js"
+    "name": "app",
+    "version": "1.0.50",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "dev": "bun run --watch src/index.ts"
+    },
+    "dependencies": {
+        "@ai-sdk/groq": "^3.0.35",
+        "@elysiajs/static": "^1.4.9",
+        "@prisma/client": "^7.8.0",
+        "ai": "^6.0.168",
+        "argon2": "^0.44.0",
+        "elysia": "latest",
+        "prisma-adapter-bun-sqlite": "^0.8.0"
+    },
+    "devDependencies": {
+        "@types/better-sqlite3": "^7.6.13",
+        "@types/node": "^25.6.0",
+        "bun-types": "latest",
+        "prisma": "^7.8.0"
+    },
+    "module": "src/index.js"
 }
