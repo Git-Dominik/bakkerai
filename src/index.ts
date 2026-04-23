@@ -1,20 +1,21 @@
-import { Elysia } from 'elysia'
-import { streamText } from 'ai'
-import { createGroq } from '@ai-sdk/groq';
-import { staticPlugin} from '@elysiajs/static'
+import { Context, Elysia } from "elysia";
+import { streamText } from "ai";
+import { createGroq } from "@ai-sdk/groq";
+import { staticPlugin } from "@elysiajs/static";
 
 const groq = createGroq({
-  apiKey: process.env.lekey
+  apiKey: process.env.lekey,
 });
 
-new Elysia().post('/groq', () => {
+new Elysia()
+  .post("/groq", async ({ request }: Context) => {
     const stream = streamText({
-        model: groq('openai/gpt-oss-120b'),
-        system: 'You are Yae Miko from Genshin Impact',
-        prompt: 'Hi! How are you doing?'
-    })
+      model: groq("openai/gpt-oss-120b"),
+      system: "You are Ui  Shigure",
+      prompt: await request.text(),
+    });
 
-    return stream.textStream
-})
-.use(staticPlugin())
-.listen(3000);
+    return stream.toTextStreamResponse();
+  })
+  .use(staticPlugin())
+  .listen(3000);
