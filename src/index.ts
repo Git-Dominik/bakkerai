@@ -1,5 +1,5 @@
-import { Context, Elysia, t, ElysiaCustomStatusResponse, file } from "elysia";
-import { streamText, userModelMessageSchema } from "ai";
+import { Elysia, t, ElysiaCustomStatusResponse, file } from "elysia";
+import { modelMessageSchema, streamText } from "ai";
 import { createGroq } from "@ai-sdk/groq";
 import { staticPlugin } from "@elysiajs/static";
 import { PrismaClient } from "../generated/prisma/client";
@@ -73,6 +73,53 @@ const api = new Elysia({ prefix: "/api" })
             }),
         },
     )
+    .get(
+        "/get-chat/:chatId",
+        async ({ params: { chatId }, cookie: { auth }, jwt }) => {
+            const token = auth?.value;
+            if (!token) {
+                return new ElysiaCustomStatusResponse("Unauthorized", {
+                    summary: "Invalid token",
+                });
+            }
+
+            const { email } = await jwt.verify(token);
+
+            const user = await prisma.user.findUnique({
+                where: { email },
+            });
+            if (!user) {
+                return new ElysiaCustomStatusResponse("Unauthorized", {
+                    summary: "User not found",
+                });
+            }
+
+            let chat = await prisma.chat.findUnique({
+                where: { id: chatId },
+            });
+            if (!chat) {
+                return new ElysiaCustomStatusResponse("Not Found", {
+                    summary: "Chat not found",
+                });
+            }
+
+            let messages = await prisma.message.findMany({
+                where: { chatId: chatId },
+            });
+
+            return new ElysiaCustomStatusResponse("OK", {
+                data: messages,
+            });
+        },
+        {
+            cookie: t.Cookie({
+                auth: t.String(),
+            }),
+            params: t.Object({
+                chatId: t.Number(),
+            }),
+        },
+    )
     .post(
         "/send-message",
         async ({ body, cookie: { auth }, jwt }) => {
@@ -105,27 +152,35 @@ const api = new Elysia({ prefix: "/api" })
                 });
             }
 
-            const messages = await prisma.message.findMany({
-                where: { chatId: body.chatId },
-            });
             await prisma.message.create({
                 data: {
                     content: body.message,
                     timestamp: new Date(),
                     userId: user.id,
-                    chatId: body.chatId,
+                    chatId: chat.id,
                 },
             });
+
+            const history = await prisma.message.findMany({
+                where: { chatId: chat.id },
+                orderBy: { id: "asc" },
+            });
+
+            const aiMessages = history
+                .filter((m) => typeof m.content === "string")
+                .map((m) =>
+                    modelMessageSchema.parse({
+                        role: m.userId ? "user" : "assistant",
+                        content: m.content,
+                    }),
+                );
+
+            console.log(aiMessages);
 
             const stream = streamText({
                 model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
                 system: "You are Hina Sorasaki from Blue Archive",
-                prompt: messages.map((m) => {
-                    return userModelMessageSchema.parse({
-                        role: "user",
-                        content: m.content,
-                    });
-                }),
+                prompt: aiMessages,
             });
 
             stream.text.then(async (t) => {
@@ -133,7 +188,7 @@ const api = new Elysia({ prefix: "/api" })
                     data: {
                         content: t,
                         timestamp: new Date(),
-                        chatId: body.chatId,
+                        chatId: chat.id,
                     },
                 });
             });

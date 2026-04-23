@@ -14,11 +14,13 @@
         "@prisma/client": "^7.8.0",
         "ai": "^6.0.168",
         "argon2": "^0.44.0",
+        "commonmark": "^0.31.2",
         "elysia": "latest",
         "prisma-adapter-bun-sqlite": "^0.8.0"
     },
     "devDependencies": {
         "@types/better-sqlite3": "^7.6.13",
+        "@types/commonmark": "^0.27.10",
         "@types/node": "^25.6.0",
         "bun-types": "latest",
         "prisma": "^7.8.0"

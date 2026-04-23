@@ -3,18 +3,53 @@ import { Parser, HtmlRenderer } from "https://esm.sh/commonmark";
 const parser = new Parser();
 const renderer = new HtmlRenderer();
 const history = [];
+const speed = 5;
 
 const apiUrl = `${window.location.origin}/api`;
 
-window.checkKeyPress = async function checkKeyPress(event) {
-    if (event.key === "Enter") {
-        check();
-    }
-};
+const input = document.getElementById("input");
+const button = document.getElementById("butone");
 
-window.check = async function check() {
-    let messages = document.getElementById("lechonk");
+function sendMessageKeyPress(event) {
+    if (event.key === "Enter") {
+        sendMessage();
+    }
+}
+
+async function getMessages(chatId) {
+    const messages = document.getElementById("lechonk");
+    if (!messages) return;
+
+    const response = await fetch(`${apiUrl}/get-chat/${chatId}`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        credentials: "include",
+    });
+    if (!response.ok) {
+        let error = JSON.parse(await response.text());
+        let message = document.createElement("p");
+        message.innerHTML = error.summary || "Error loading messages";
+
+        messages.append(message);
+        return;
+    }
+
+    const parsedMessages = JSON.parse(await response.text());
+    parsedMessages.data.forEach((message) => {
+        const messageElement = document.createElement("p");
+        messageElement.innerHTML = message.content;
+        messages.append(messageElement);
+    });
+}
+
+export async function sendMessage() {
+    const messages = document.getElementById("lechonk");
+    if (!messages) return;
+
     const input = document.getElementById("input");
+    if (!input) return;
 
     const response = await fetch(`${apiUrl}/send-message`, {
         method: "POST",
@@ -27,29 +62,28 @@ window.check = async function check() {
         },
         credentials: "include",
     });
-    if (!response.ok) {
+    if (!response.ok || !response.body) {
         let error = JSON.parse(await response.text());
         let message = document.createElement("p");
-        message.innerHTML = error.summary;
+        message.innerHTML = error.summary || "An error occurred";
 
         messages.append(message);
         return;
     }
 
     let userMessage = document.createElement("p");
-    userMessage = input.value;
+    userMessage.innerHTML = input.value;
     messages.append(userMessage);
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
 
     let message = document.createElement("p");
     messages.append(message);
 
     let fullText = "";
     let assistantReply = "";
-    var speed = 5;
     let i = 0;
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
 
     function typeWriter() {
         if (i < fullText.length) {
@@ -63,6 +97,7 @@ window.check = async function check() {
     while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+
         const chonk = decoder.decode(value);
         fullText += chonk;
         assistantReply += chonk;
@@ -72,4 +107,9 @@ window.check = async function check() {
 
     history.push({ role: "assistant", content: assistantReply });
     console.log(history);
-};
+}
+
+input.addEventListener("keypress", sendMessageKeyPress);
+button.addEventListener("click", sendMessage);
+
+await getMessages(1);
