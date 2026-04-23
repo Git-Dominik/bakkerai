@@ -7,16 +7,25 @@ const history = [];
 const apiUrl = `${window.location.origin}/api`;
 
 window.check = async function check() {
+    let messages = document.getElementById("lechonk");
     const input = document.getElementById("input");
 
     const response = await fetch(`${apiUrl}/send-message`, {
         method: "POST",
         body: input.value,
+        credentials: "include",
     });
+    if (!response.ok) {
+        let error = JSON.parse(await response.text());
+        let message = document.createElement("p");
+        message.innerHTML = error.summary;
+
+        messages.append(message);
+    }
+
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
 
-    let messages = document.getElementById("lechonk");
     let message = document.createElement("p");
     messages.append(message);
 
