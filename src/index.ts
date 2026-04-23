@@ -10,7 +10,7 @@ const groq = createGroq({
 new Elysia()
     .post('/groq',  async ({ request }: Context) => {
     const stream = streamText({
-      model: groq("qwen/qwen3-32b"),
+      model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
       system: "You are Hina Sorasaki",
       prompt: await request.text(),
     });
