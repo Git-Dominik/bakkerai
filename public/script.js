@@ -2,6 +2,7 @@ import { Parser, HtmlRenderer } from "https://esm.sh/commonmark";
 
 const parser = new Parser();
 const renderer = new HtmlRenderer();
+const history = [];
 
 const apiUrl = `${window.location.origin}/api`;
 
@@ -20,14 +21,29 @@ window.check = async function check() {
     messages.append(message);
 
     let fullText = "";
+    let assistantReply = "";
+    var speed = 5;
+    let i = 0;
+
+    function typeWriter() {
+        if (i < fullText.length) {
+            i++;
+            const parsed = parser.parse(fullText.slice(0, i));
+            message.innerHTML = renderer.render(parsed);
+            setTimeout(typeWriter, speed);
+        }
+    }
 
     while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+        const chonk = decoder.decode(value);
+        fullText += chonk;
+        assistantReply += chonk;
 
-        fullText += decoder.decode(value);
-
-        const parsed = parser.parse(fullText);
-        message.innerHTML = renderer.render(parsed);
+        if (i === fullText.length - chonk.length) typeWriter();
     }
+
+    history.push({ role: "assistant", content: assistantReply });
+    console.log(history);
 };
