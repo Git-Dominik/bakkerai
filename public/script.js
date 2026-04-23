@@ -33,6 +33,7 @@ window.check = async function check() {
         message.innerHTML = error.summary;
 
         messages.append(message);
+        return;
     }
 
     let userMessage = document.createElement("p");

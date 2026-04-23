@@ -4,7 +4,6 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "dev": "bun run --watch src/index.ts",
-        "init": "bunx --bun prisma init --datasource-provider sqlite --output ../generated/prisma",
         "migrate": "bunx --bun prisma migrate dev --name init && bun generate",
         "generate": "bunx --bun prisma generate"
     },
