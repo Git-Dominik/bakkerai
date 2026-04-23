@@ -26,6 +26,19 @@ window.check = async function check() {
 
     let fullText = "";
     let assistantReply = "";
+    var speed = 5;
+    let i = 0;
+
+
+    function typeWriter() {
+        if (i < fullText.length) {
+            i++;
+            const parsed = parser.parse(fullText.slice(0, i));
+            message.innerHTML = renderer.render(parsed);
+            setTimeout(typeWriter, speed);
+        }
+    }
+
 
     while (true) {
         const { done, value } = await reader.read();
@@ -34,8 +47,7 @@ window.check = async function check() {
         fullText += chonk;
         assistantReply += chonk;
 
-        const parsed = parser.parse(fullText);
-        message.innerHTML = renderer.render(parsed);
+        if (i === fullText.length - chonk.length) typeWriter();
     }
 
     history.push({ role: "assistant", content: assistantReply });
