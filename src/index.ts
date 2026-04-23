@@ -1,7 +1,18 @@
-import { Elysia } from "elysia";
+import { Elysia } from 'elysia'
+import { streamText } from 'ai'
+import { createGroq } from '@ai-sdk/groq';
 
-const app = new Elysia().get("/", () => "Hello Elysia").listen(3000);
+const groq = createGroq({
+  apiKey: process.env.lekey
+});
 
-console.log(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
-);
+new Elysia().get('/', () => {
+    const stream = streamText({
+        model: groq('openai/gpt-oss-120b'),
+        system: 'You are Yae Miko from Genshin Impact',
+        prompt: 'Hi! How are you doing?'
+    })
+
+    return stream.textStream
+})
+.listen(3000);
