@@ -26,16 +26,16 @@ model User {
 model Chat {
     id       Int       @id @default(autoincrement())
     messages Message[]
-    user     User?     @relation(fields: [userId], references: [id])
-    userId   Int?
+    user     User      @relation(fields: [userId], references: [id])
+    userId   Int
 }
 
 model Message {
     id        Int      @id @default(autoincrement())
-    content   String?
+    content   String
     timestamp DateTime @default(now())
     user      User?    @relation(fields: [userId], references: [id])
     userId    Int?
-    chat      Chat?    @relation(fields: [chatId], references: [id])
-    chatId    Int?
+    chat      Chat     @relation(fields: [chatId], references: [id])
+    chatId    Int
 }

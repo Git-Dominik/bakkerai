@@ -6,13 +6,25 @@ const history = [];
 
 const apiUrl = `${window.location.origin}/api`;
 
+window.checkKeyPress = async function checkKeyPress(event) {
+    if (event.key === "Enter") {
+        check();
+    }
+};
+
 window.check = async function check() {
     let messages = document.getElementById("lechonk");
     const input = document.getElementById("input");
 
     const response = await fetch(`${apiUrl}/send-message`, {
         method: "POST",
-        body: input.value,
+        body: JSON.stringify({
+            chatId: 1,
+            message: input.value,
+        }),
+        headers: {
+            "Content-Type": "application/json",
+        },
         credentials: "include",
     });
     if (!response.ok) {
@@ -22,6 +34,10 @@ window.check = async function check() {
 
         messages.append(message);
     }
+
+    let userMessage = document.createElement("p");
+    userMessage = input.value;
+    messages.append(userMessage);
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();

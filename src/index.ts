@@ -1,5 +1,5 @@
 import { Context, Elysia, t, ElysiaCustomStatusResponse, file } from "elysia";
-import { streamText } from "ai";
+import { streamText, userModelMessageSchema } from "ai";
 import { createGroq } from "@ai-sdk/groq";
 import { staticPlugin } from "@elysiajs/static";
 import { PrismaClient } from "../generated/prisma/client";
@@ -18,13 +18,11 @@ const groq = createGroq({
     apiKey: process.env.lekey,
 });
 
-console.log(await prisma.user.findMany());
-
 const api = new Elysia({ prefix: "/api" })
     .use(jwt({ name: "jwt", secret: "SuperSecretKey" }))
     .post(
         "/register",
-        async ({ body }) => {
+        async ({ body, redirect }) => {
             const hashedPassword = await hash(body.password);
             await prisma.user.create({
                 data: {
@@ -34,9 +32,7 @@ const api = new Elysia({ prefix: "/api" })
                 },
             });
 
-            return new ElysiaCustomStatusResponse("Permanent Redirect", {
-                location: "/login",
-            });
+            return redirect("/");
         },
         {
             body: t.Object({
@@ -48,23 +44,19 @@ const api = new Elysia({ prefix: "/api" })
     )
     .post(
         "/login",
-        async ({ body, jwt, cookie }) => {
-            const hashedPassword = await hash(body.password);
-
+        async ({ body, jwt, cookie, redirect }) => {
             const user = await prisma.user.findUnique({
                 where: { email: body.email },
             });
-            console.log(hashedPassword, user);
-            if (!user || !verify(user.password, body.password)) {
-                return new ElysiaCustomStatusResponse(
-                    "Unauthorized",
-                    "password incorrect",
-                );
+            if (!user || !(await verify(user.password, body.password))) {
+                return new ElysiaCustomStatusResponse("Unauthorized", {
+                    summary: "Password incorrect",
+                });
             }
 
             const token = await jwt.sign({
                 email: body.email,
-                password: hashedPassword,
+                sub: user.id.toString(),
             });
             cookie.auth.set({
                 value: token,
@@ -72,9 +64,7 @@ const api = new Elysia({ prefix: "/api" })
                 maxAge: 7 * 86400,
             });
 
-            return new ElysiaCustomStatusResponse("Permanent Redirect", {
-                headers: { Location: "/" },
-            });
+            return redirect("/");
         },
         {
             body: t.Object({
@@ -85,10 +75,12 @@ const api = new Elysia({ prefix: "/api" })
     )
     .post(
         "/send-message",
-        async ({ request, cookie: { auth }, jwt }) => {
+        async ({ body, cookie: { auth }, jwt }) => {
             const token = auth?.value;
             if (!token) {
-                return new ElysiaCustomStatusResponse("Unauthorized", {});
+                return new ElysiaCustomStatusResponse("Unauthorized", {
+                    summary: "Invalid token",
+                });
             }
 
             const { email } = await jwt.verify(token);
@@ -97,13 +89,53 @@ const api = new Elysia({ prefix: "/api" })
                 where: { email },
             });
             if (!user) {
-                return new ElysiaCustomStatusResponse("Unauthorized", {});
+                return new ElysiaCustomStatusResponse("Unauthorized", {
+                    summary: "User not found",
+                });
             }
+
+            let chat = await prisma.chat.findUnique({
+                where: { id: body.chatId },
+            });
+            if (!chat) {
+                chat = await prisma.chat.create({
+                    data: {
+                        userId: user.id,
+                    },
+                });
+            }
+
+            const messages = await prisma.message.findMany({
+                where: { chatId: body.chatId },
+            });
+            await prisma.message.create({
+                data: {
+                    content: body.message,
+                    timestamp: new Date(),
+                    userId: user.id,
+                    chatId: body.chatId,
+                },
+            });
 
             const stream = streamText({
                 model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
-                system: "You are Hina Sorasaki",
-                prompt: await request.text(),
+                system: "You are Hina Sorasaki from Blue Archive",
+                prompt: messages.map((m) => {
+                    return userModelMessageSchema.parse({
+                        role: "user",
+                        content: m.content,
+                    });
+                }),
+            });
+
+            stream.text.then(async (t) => {
+                await prisma.message.create({
+                    data: {
+                        content: t,
+                        timestamp: new Date(),
+                        chatId: body.chatId,
+                    },
+                });
             });
 
             return stream.textStream;
@@ -111,6 +143,10 @@ const api = new Elysia({ prefix: "/api" })
         {
             cookie: t.Cookie({
                 auth: t.String(),
+            }),
+            body: t.Object({
+                chatId: t.Number(),
+                message: t.String(),
             }),
         },
     );
