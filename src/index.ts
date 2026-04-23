@@ -1,9 +1,9 @@
-import { Context, Elysia, t, ElysiaCustomStatusResponse } from "elysia";
+import { Context, Elysia, t, ElysiaCustomStatusResponse, file } from "elysia";
 import { streamText } from "ai";
 import { createGroq } from "@ai-sdk/groq";
 import { staticPlugin } from "@elysiajs/static";
 import { PrismaClient } from "../generated/prisma/client";
-import { hash } from "argon2";
+import { hash, verify } from "argon2";
 import { PrismaBunSqlite } from "prisma-adapter-bun-sqlite";
 import jwt from "@elysiajs/jwt";
 
@@ -18,6 +18,8 @@ const groq = createGroq({
     apiKey: process.env.lekey,
 });
 
+console.log(await prisma.user.findMany());
+
 const api = new Elysia({ prefix: "/api" })
     .use(jwt({ name: "jwt", secret: "SuperSecretKey" }))
     .post(
@@ -26,7 +28,7 @@ const api = new Elysia({ prefix: "/api" })
             const hashedPassword = await hash(body.password);
             await prisma.user.create({
                 data: {
-                    name: body.name,
+                    name: body.username,
                     email: body.email,
                     password: hashedPassword,
                 },
@@ -38,7 +40,7 @@ const api = new Elysia({ prefix: "/api" })
         },
         {
             body: t.Object({
-                name: t.String(),
+                username: t.String(),
                 email: t.String({ format: "email" }),
                 password: t.String(),
             }),
@@ -52,8 +54,12 @@ const api = new Elysia({ prefix: "/api" })
             const user = await prisma.user.findUnique({
                 where: { email: body.email },
             });
-            if (!user || user.password !== hashedPassword) {
-                return new ElysiaCustomStatusResponse("Unauthorized", {});
+            console.log(hashedPassword, user);
+            if (!user || !verify(user.password, body.password)) {
+                return new ElysiaCustomStatusResponse(
+                    "Unauthorized",
+                    "password incorrect",
+                );
             }
 
             const token = await jwt.sign({
@@ -66,7 +72,9 @@ const api = new Elysia({ prefix: "/api" })
                 maxAge: 7 * 86400,
             });
 
-            return new ElysiaCustomStatusResponse("OK", {});
+            return new ElysiaCustomStatusResponse("Permanent Redirect", {
+                headers: { Location: "/" },
+            });
         },
         {
             body: t.Object({
@@ -109,5 +117,7 @@ const api = new Elysia({ prefix: "/api" })
 
 new Elysia()
     .use(api)
+    .get("/register", file("public/register.html"))
+    .get("/login", file("public/login.html"))
     .use(staticPlugin({ assets: "public", prefix: "" }))
     .listen(3000);
