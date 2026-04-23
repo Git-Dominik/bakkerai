@@ -6,6 +6,7 @@
       "name": "app",
       "dependencies": {
         "@ai-sdk/groq": "^3.0.35",
+        "@elysiajs/static": "^1.4.9",
         "ai": "^6.0.168",
         "elysia": "latest",
       },
@@ -24,6 +25,8 @@
     "@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@4.0.23", "", { "dependencies": { "@ai-sdk/provider": "3.0.8", "@standard-schema/spec": "^1.1.0", "eventsource-parser": "^3.0.6" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-z8GlDaCmRSDlqkMF2f4/RFgWxdarvIbyuk+m6WXT1LYgsnGiXRJGTD2Z1+SDl3LqtFuRtGX1aghYvQLoHL/9pg=="],
 
     "@borewit/text-codec": ["@borewit/text-codec@0.2.2", "", {}, "sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ=="],
+
+    "@elysiajs/static": ["@elysiajs/static@1.4.9", "", { "peerDependencies": { "elysia": ">= 1.4.0" } }, "sha512-b4niBOvl1daqkBqQEStugUfYL0/LaEJHywAzH9Wxhv2tc6d0H6PmwOKl9jEpzhj2PDsG4iJ1kyqDNCKG0Pl36A=="],
 
     "@opentelemetry/api": ["@opentelemetry/api@1.9.0", "", {}, "sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg=="],
 

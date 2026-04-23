@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <p id="lechonk"></p>
+    <script>
+        async function check() {
+            const url = "http://localhost:3000/groq";
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json; charset=UTF-8',
+                },
+            });
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            const thing = document.getElementById("lechonk");
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                thing.innerHTML += decoder.decode(value);
+            }
+        }
+        check();
+    </script>
+</body>
+
+</html>
