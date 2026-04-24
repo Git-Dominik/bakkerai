@@ -15,3 +15,11 @@ p {
 #busy-warning {
     background-color: red;
 }
+
+.ai-response {
+    background-color: purple;
+}
+
+.user-message {
+    background-color: orange;
+}

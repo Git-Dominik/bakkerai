@@ -77,6 +77,7 @@ async function getMessages(chatId) {
     const parsedMessages = JSON.parse(await response.text());
     parsedMessages.data.forEach((message) => {
         const messageElement = document.createElement("p");
+        messageElement.classList.add(message.userId ? "user-message" : "ai-response");
         messageElement.innerHTML = message.content;
         messages.append(messageElement);
     });
@@ -120,10 +121,12 @@ export async function sendMessage() {
     }
 
     let userMessage = document.createElement("p");
+    userMessage.classList.add("user-message");
     userMessage.innerHTML = input.value;
     messages.append(userMessage);
 
     let message = document.createElement("p");
+    message.classList.add("ai-response")
     messages.append(message);
 
     let fullText = "";
