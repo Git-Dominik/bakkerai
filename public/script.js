@@ -4,149 +4,200 @@ const parser = new Parser();
 const renderer = new HtmlRenderer();
 const history = [];
 const speed = 5;
-const currentChat = 1;
 
 const apiUrl = `${window.location.origin}/api`;
 
 const input = document.getElementById("input");
 const button = document.getElementById("butone");
 
+let currentChat;
+
 function sendMessageKeyPress(event) {
-    if (event.key === "Enter") {
-        sendMessage();
-    }
+  if (event.key === "Enter") {
+    sendMessage();
+  }
 }
 
 async function nukeToken() {
-    await fetch(`${apiUrl}/logout`, {
-        method: "POST",
-        credentials: "include",
-    });
+  await fetch(`${apiUrl}/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
 }
 
 async function getChats() {
-    const chats = document.getElementById("chats");
-    if (!chats) return;
+  const chats = document.getElementById("chats");
+  if (!chats) return;
 
-    const response = await fetch(`${apiUrl}/chats`, {
-        method: "GET",
-        credentials: "include",
-    });
-    if (!response.ok) {
-        if (response.status === 401) {
-            nukeToken();
-        }
-
-        let error = JSON.parse(await response.text());
-        let message = document.createElement("p");
-        message.innerHTML = error.summary || "Error loading chats";
-
-        chats.append(message);
-        return;
+  const response = await fetch(`${apiUrl}/chats`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (!response.ok) {
+    if (response.status === 401) {
+      nukeToken();
     }
 
-    const parsedChats = JSON.parse(await response.text());
-    parsedChats.forEach((chat) => {
-        const chatElement = document.createElement("button");
-        chatElement.innerHTML = chat.name;
-        chats.append(chatElement);
+    let error = JSON.parse(await response.text());
+    let message = document.createElement("p");
+    message.innerHTML = error.summary || "Error loading chats";
+
+    chats.append(message);
+    return;
+  }
+
+  const parsedChats = JSON.parse(await response.text());
+  if (parsedChats.length !== 0) {
+    getMessages(parsedChats[0].id);
+  }
+
+  chats.innerHTML = "";
+
+  parsedChats.forEach((chat) => {
+    const chatElement = document.createElement("button");
+    chatElement.innerHTML = chat.id;
+    chatElement.addEventListener("click", () => {
+      if (chat.id === currentChat) return;
+
+      getMessages(chat.id);
     });
+
+    chats.append(chatElement);
+  });
+
+  const newChatElement = document.createElement("button");
+  newChatElement.innerHTML = "New Chat";
+  newChatElement.addEventListener("click", () => {
+    getChats();
+    createChat().then((chatId) => {
+      getMessages(chatId);
+    });
+  });
+  chats.append(newChatElement);
 }
 
 async function getMessages(chatId) {
-    const messages = document.getElementById("lechonk");
-    if (!messages) return;
+  const messages = document.getElementById("lechonk");
+  if (!messages) return;
 
-    const response = await fetch(`${apiUrl}/chats/${chatId}/messages`, {
-        method: "GET",
-        credentials: "include",
-    });
-    if (!response.ok) {
-        if (response.status === 401) {
-            nukeToken();
-        }
-
-        let error = JSON.parse(await response.text());
-        let message = document.createElement("p");
-        message.innerHTML = error.summary || "Error loading messages";
-
-        messages.append(message);
-        return;
+  const response = await fetch(`${apiUrl}/chats/${chatId}/messages`, {
+    method: "GET",
+    credentials: "include",
+  });
+  if (!response.ok) {
+    if (response.status === 401) {
+      nukeToken();
     }
 
-    const parsedMessages = JSON.parse(await response.text());
-    parsedMessages.data.forEach((message) => {
-        const messageElement = document.createElement("p");
-        messageElement.innerHTML = message.content;
-        messages.append(messageElement);
-    });
+    let error = JSON.parse(await response.text());
+    let message = document.createElement("p");
+    message.innerHTML = error.summary || "Error loading messages";
+
+    messages.append(message);
+    return;
+  }
+
+  messages.innerHTML = "";
+
+  const parsedMessages = JSON.parse(await response.text());
+  parsedMessages.data.forEach((message) => {
+    const messageElement = document.createElement("p");
+    messageElement.innerHTML = message.content;
+
+    if (message.role === "user") {
+      messageElement.classList.add("userMessage");
+    }
+
+    messages.append(messageElement);
+  });
+
+  currentChat = chatId;
+}
+
+export async function createChat() {
+  const response = await fetch(`${apiUrl}/chats`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!response.ok) {
+    if (response.status === 401) {
+      nukeToken();
+    }
+    return;
+  }
+
+  return await response.text();
 }
 
 export async function sendMessage() {
-    const messages = document.getElementById("lechonk");
-    if (!messages) return;
+  if (!currentChat) {
+    currentChat = await createChat();
+    if (!currentChat) return;
+  }
 
-    const input = document.getElementById("input");
-    if (!input) return;
+  const messages = document.getElementById("lechonk");
+  if (!messages) return;
 
-    const response = await fetch(`${apiUrl}/chats/${currentChat}/messages`, {
-        method: "POST",
-        body: input.value,
-        credentials: "include",
-    });
-    if (!response.ok || !response.body) {
-        if (response.status === 401) {
-            nukeToken();
-        }
+  const input = document.getElementById("input");
+  if (!input) return;
 
-        let error = JSON.parse(await response.text());
-        let message = document.createElement("p");
-        message.innerHTML = error.summary || "An error occurred";
-
-        messages.append(message);
-        return;
+  const response = await fetch(`${apiUrl}/chats/${currentChat}/messages`, {
+    method: "POST",
+    body: input.value,
+    credentials: "include",
+  });
+  if (!response.ok || !response.body) {
+    if (response.status === 401) {
+      nukeToken();
     }
 
-    let userMessage = document.createElement("p");
-    userMessage.innerHTML = input.value;
-    messages.append(userMessage);
-
+    let error = JSON.parse(await response.text());
     let message = document.createElement("p");
+    message.innerHTML = error.summary || "An error occurred";
+
     messages.append(message);
+    return;
+  }
 
-    let fullText = "";
-    let assistantReply = "";
-    let i = 0;
+  let userMessage = document.createElement("p");
+  userMessage.innerHTML = input.value;
+  messages.append(userMessage);
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
+  let message = document.createElement("p");
+  messages.append(message);
 
-    function typeWriter() {
-        if (i < fullText.length) {
-            i++;
-            const parsed = parser.parse(fullText.slice(0, i));
-            message.innerHTML = renderer.render(parsed);
-            setTimeout(typeWriter, speed);
-        }
+  let fullText = "";
+  let assistantReply = "";
+  let i = 0;
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+
+  function typeWriter() {
+    if (i < fullText.length) {
+      i++;
+      const parsed = parser.parse(fullText.slice(0, i));
+      message.innerHTML = renderer.render(parsed);
+      setTimeout(typeWriter, speed);
     }
+  }
 
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
 
-        const chonk = decoder.decode(value);
-        fullText += chonk;
-        assistantReply += chonk;
+    const chonk = decoder.decode(value);
+    fullText += chonk;
+    assistantReply += chonk;
 
-        if (i === fullText.length - chonk.length) typeWriter();
-    }
+    if (i === fullText.length - chonk.length) typeWriter();
+  }
 
-    history.push({ role: "assistant", content: assistantReply });
-    console.log(history);
+  history.push({ role: "assistant", content: assistantReply });
+  console.log(history);
 }
 
 input.addEventListener("keypress", sendMessageKeyPress);
 button.addEventListener("click", sendMessage);
 
-await getMessages(currentChat);
 await getChats();
