@@ -4,6 +4,7 @@ const parser = new Parser();
 const renderer = new HtmlRenderer();
 const history = [];
 const speed = 5;
+const currentChat = 1;
 
 const apiUrl = `${window.location.origin}/api`;
 
@@ -16,18 +17,55 @@ function sendMessageKeyPress(event) {
     }
 }
 
+async function nukeToken() {
+    await fetch(`${apiUrl}/logout`, {
+        method: "POST",
+        credentials: "include",
+    });
+}
+
+async function getChats() {
+    const chats = document.getElementById("chats");
+    if (!chats) return;
+
+    const response = await fetch(`${apiUrl}/chats`, {
+        method: "GET",
+        credentials: "include",
+    });
+    if (!response.ok) {
+        if (response.status === 401) {
+            nukeToken();
+        }
+
+        let error = JSON.parse(await response.text());
+        let message = document.createElement("p");
+        message.innerHTML = error.summary || "Error loading chats";
+
+        chats.append(message);
+        return;
+    }
+
+    const parsedChats = JSON.parse(await response.text());
+    parsedChats.forEach((chat) => {
+        const chatElement = document.createElement("button");
+        chatElement.innerHTML = chat.name;
+        chats.append(chatElement);
+    });
+}
+
 async function getMessages(chatId) {
     const messages = document.getElementById("lechonk");
     if (!messages) return;
 
-    const response = await fetch(`${apiUrl}/get-chat/${chatId}`, {
+    const response = await fetch(`${apiUrl}/chats/${chatId}/messages`, {
         method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-        },
         credentials: "include",
     });
     if (!response.ok) {
+        if (response.status === 401) {
+            nukeToken();
+        }
+
         let error = JSON.parse(await response.text());
         let message = document.createElement("p");
         message.innerHTML = error.summary || "Error loading messages";
@@ -51,18 +89,16 @@ export async function sendMessage() {
     const input = document.getElementById("input");
     if (!input) return;
 
-    const response = await fetch(`${apiUrl}/send-message`, {
+    const response = await fetch(`${apiUrl}/chats/${currentChat}/messages`, {
         method: "POST",
-        body: JSON.stringify({
-            chatId: 1,
-            message: input.value,
-        }),
-        headers: {
-            "Content-Type": "application/json",
-        },
+        body: input.value,
         credentials: "include",
     });
     if (!response.ok || !response.body) {
+        if (response.status === 401) {
+            nukeToken();
+        }
+
         let error = JSON.parse(await response.text());
         let message = document.createElement("p");
         message.innerHTML = error.summary || "An error occurred";
@@ -112,4 +148,5 @@ export async function sendMessage() {
 input.addEventListener("keypress", sendMessageKeyPress);
 button.addEventListener("click", sendMessage);
 
-await getMessages(1);
+await getMessages(currentChat);
+await getChats();

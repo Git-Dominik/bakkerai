@@ -42,6 +42,10 @@ const api = new Elysia({ prefix: "/api" })
             }),
         },
     )
+    .post("/logout", async ({ cookie, redirect }) => {
+        cookie.auth.remove();
+        return redirect("/");
+    })
     .post(
         "/login",
         async ({ body, jwt, cookie, redirect }) => {
@@ -74,7 +78,39 @@ const api = new Elysia({ prefix: "/api" })
         },
     )
     .get(
-        "/get-chat/:chatId",
+        "/chats",
+        async ({ cookie: { auth }, jwt }) => {
+            const token = auth?.value;
+            if (!token) {
+                return new ElysiaCustomStatusResponse("Unauthorized", {
+                    summary: "Invalid token",
+                });
+            }
+
+            const { email } = await jwt.verify(token);
+
+            const user = await prisma.user.findUnique({
+                where: { email },
+            });
+            if (!user) {
+                return new ElysiaCustomStatusResponse("Unauthorized", {
+                    summary: "Invalid token",
+                });
+            }
+
+            const chats = await prisma.chat.findMany({
+                where: { userId: user.id },
+            });
+            return chats;
+        },
+        {
+            cookie: t.Cookie({
+                auth: t.String(),
+            }),
+        },
+    )
+    .get(
+        "/chats/:chatId/messages",
         async ({ params: { chatId }, cookie: { auth }, jwt }) => {
             const token = auth?.value;
             if (!token) {
@@ -121,8 +157,8 @@ const api = new Elysia({ prefix: "/api" })
         },
     )
     .post(
-        "/send-message",
-        async ({ body, cookie: { auth }, jwt }) => {
+        "/chats/:chatId/messages",
+        async ({ params: { chatId }, body, cookie: { auth }, jwt }) => {
             const token = auth?.value;
             if (!token) {
                 return new ElysiaCustomStatusResponse("Unauthorized", {
@@ -142,7 +178,7 @@ const api = new Elysia({ prefix: "/api" })
             }
 
             let chat = await prisma.chat.findUnique({
-                where: { id: body.chatId },
+                where: { id: chatId },
             });
             if (!chat) {
                 chat = await prisma.chat.create({
@@ -154,7 +190,7 @@ const api = new Elysia({ prefix: "/api" })
 
             await prisma.message.create({
                 data: {
-                    content: body.message,
+                    content: body,
                     timestamp: new Date(),
                     userId: user.id,
                     chatId: chat.id,
@@ -199,10 +235,10 @@ const api = new Elysia({ prefix: "/api" })
             cookie: t.Cookie({
                 auth: t.String(),
             }),
-            body: t.Object({
+            params: t.Object({
                 chatId: t.Number(),
-                message: t.String(),
             }),
+            body: t.String(),
         },
     );
 
