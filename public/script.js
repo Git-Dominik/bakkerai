@@ -76,10 +76,20 @@ async function getMessages(chatId) {
 
     const parsedMessages = JSON.parse(await response.text());
     parsedMessages.data.forEach((message) => {
-        const messageElement = document.createElement("p");
-        messageElement.classList.add(message.userId ? "user-message" : "ai-response");
-        messageElement.innerHTML = message.content;
-        messages.append(messageElement);
+        if (message.userId) {
+            const usrContainer = document.createElement("div");
+            usrContainer.classList.add("user-message-container");
+            const messageElement = document.createElement("p");
+            messageElement.classList.add("user-message");
+            messageElement.innerHTML = message.content;
+            usrContainer.append(messageElement);
+            messages.append(usrContainer);
+        } else {
+            const messageElement = document.createElement("p");
+            messageElement.classList.add("ai-response");
+            messageElement.innerHTML = message.content;
+            messages.append(messageElement);
+        }
     });
 }
 let busy = false;
@@ -120,10 +130,14 @@ export async function sendMessage() {
         return;
     }
 
+    const usrContainer = document.createElement("div");
+    usrContainer.classList.add("user-message-container");
+
     let userMessage = document.createElement("p");
     userMessage.classList.add("user-message");
     userMessage.innerHTML = input.value;
-    messages.append(userMessage);
+    usrContainer.append(userMessage);
+    messages.append(usrContainer);
 
     let message = document.createElement("p");
     message.classList.add("ai-response")
