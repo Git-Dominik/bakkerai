@@ -4,7 +4,7 @@
 }
 
 body {
-    background-color: rgb(33, 33, 33);
+    background-color: rgb(41, 41, 41);
     padding: 100px;
 }
 
@@ -18,11 +18,13 @@ p {
 }
 
 .ai-response {
-    background-color: purple;
+    border: 1px solid green;
+    border-radius: 20px;
+    padding: 10px 15px;
 }
 
 .user-message {
-    background-color: rgb(60, 60, 60);
+    background-color: rgb(49, 49, 49);
     border: 1px solid red;
     padding: 10px 15px;
     border-radius: 20px;
