@@ -81,9 +81,21 @@ async function getMessages(chatId) {
         messages.append(messageElement);
     });
 }
+let busy = false;
 
 export async function sendMessage() {
     const messages = document.getElementById("lechonk");
+    if (busy) {
+        if (!document.getElementById("busy-warning")) {
+            const busyElement = document.createElement("p");
+            busyElement.id = "busy-warning";
+            busyElement.innerHTML = "hollon im cookin";
+            messages.append(busyElement);
+            console.log("wait for le finish");
+        }
+        return;
+    }
+    busy = true;
     if (!messages) return;
 
     const input = document.getElementById("input");
@@ -127,6 +139,9 @@ export async function sendMessage() {
             const parsed = parser.parse(fullText.slice(0, i));
             message.innerHTML = renderer.render(parsed);
             setTimeout(typeWriter, speed);
+        } else {
+            busy = false;
+            document.getElementById("busy-warning")?.remove();
         }
     }
 
