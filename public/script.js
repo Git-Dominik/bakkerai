@@ -101,14 +101,21 @@ async function getMessages(chatId) {
 
   const parsedMessages = JSON.parse(await response.text());
   parsedMessages.data.forEach((message) => {
-    const messageElement = document.createElement("p");
-    messageElement.innerHTML = message.content;
-
-    if (message.role === "user") {
-      messageElement.classList.add("userMessage");
+    const isUser = message.userId || message.role === "user";
+    if (isUser) {
+      const usrContainer = document.createElement("div");
+      usrContainer.classList.add("user-message-container");
+      const messageElement = document.createElement("p");
+      messageElement.classList.add("user-message");
+      messageElement.innerHTML = message.content;
+      usrContainer.append(messageElement);
+      messages.append(usrContainer);
+    } else {
+      const messageElement = document.createElement("p");
+      messageElement.classList.add("ai-response");
+      messageElement.innerHTML = message.content;
+      messages.append(messageElement);
     }
-
-    messages.append(messageElement);
   });
 
   currentChat = chatId;
@@ -129,13 +136,30 @@ export async function createChat() {
   return await response.text();
 }
 
+let busy = false;
+
 export async function sendMessage() {
+  const messages = document.getElementById("lechonk");
+  if (busy) {
+    if (!document.getElementById("busy-warning")) {
+      const busyElement = document.createElement("p");
+      busyElement.id = "busy-warning";
+      busyElement.innerHTML = "hollon im cookin";
+      messages.append(busyElement);
+      console.log("wait for le finish");
+    }
+    return;
+  }
+  busy = true;
+
   if (!currentChat) {
     currentChat = await createChat();
-    if (!currentChat) return;
+    if (!currentChat) {
+      busy = false;
+      return;
+    }
   }
 
-  const messages = document.getElementById("lechonk");
   if (!messages) return;
 
   const input = document.getElementById("input");
@@ -151,11 +175,20 @@ export async function sendMessage() {
       nukeToken();
     }
 
-    let error = JSON.parse(await response.text());
-    let message = document.createElement("p");
-    message.innerHTML = error.summary || "An error occurred";
+    const usrContainer = document.createElement("div");
+    usrContainer.classList.add("user-message-container");
 
-    messages.append(message);
+    let userMessage = document.createElement("p");
+    userMessage.classList.add("user-message");
+    userMessage.innerHTML = input.value;
+    usrContainer.append(userMessage);
+    messages.append(usrContainer);
+
+    let error = document.createElement("p");
+    error.classList.add("ai-response");
+    error.innerHTML = "An error occurred";
+    messages.append(error);
+    busy = false;
     return;
   }
 
@@ -179,6 +212,76 @@ export async function sendMessage() {
       const parsed = parser.parse(fullText.slice(0, i));
       message.innerHTML = renderer.render(parsed);
       setTimeout(typeWriter, speed);
+    } else {
+      busy = false;
+      document.getElementById("busy-warning")?.remove();
+}
+  }
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const chonk = decoder.decode(value);
+    fullText += chonk;
+    assistantReply += chonk;
+
+    if (i === fullText.length - chonk.length) typeWriter();
+  }
+
+  history.push({ role: "assistant", content: assistantReply });
+  console.log(history);
+}
+        return;
+}
+    busy = true;
+    if (!messages) return;
+
+  if (!response.ok || !response.body) {
+    if (response.status === 401) {
+      nukeToken();
+    }
+
+    const usrContainer = document.createElement("div");
+    usrContainer.classList.add("user-message-container");
+
+    let userMessage = document.createElement("p");
+    userMessage.classList.add("user-message");
+    userMessage.innerHTML = input.value;
+    usrContainer.append(userMessage);
+    messages.append(usrContainer);
+
+    let message = document.createElement("p");
+    message.classList.add("ai-response");
+    message.innerHTML = "An error occurred";
+    messages.append(message);
+    busy = false;
+    return;
+  }
+
+  let userMessage = document.createElement("p");
+  userMessage.innerHTML = input.value;
+  messages.append(userMessage);
+
+  let message = document.createElement("p");
+  messages.append(message);
+
+  let fullText = "";
+  let assistantReply = "";
+  let i = 0;
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+
+  function typeWriter() {
+    if (i < fullText.length) {
+      i++;
+      const parsed = parser.parse(fullText.slice(0, i));
+      message.innerHTML = renderer.render(parsed);
+      setTimeout(typeWriter, speed);
+    } else {
+      busy = false;
+      document.getElementById("busy-warning")?.remove();
     }
   }
 
@@ -187,6 +290,17 @@ export async function sendMessage() {
     if (done) break;
 
     const chonk = decoder.decode(value);
+    fullText += chonk;
+    assistantReply += chonk;
+
+    if (i === fullText.length - chonk.length) typeWriter();
+  }
+
+history.push({ role: "assistant", content: assistantReply });
+  console.log(history);
+}
+
+input.addEventListener("keypress", sendMessageKeyPress);
     fullText += chonk;
     assistantReply += chonk;
 
