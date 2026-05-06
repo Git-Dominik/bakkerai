@@ -146,6 +146,7 @@ export async function sendMessage() {
       busyElement.id = "busy-warning";
       busyElement.innerHTML = "hollon im cookin";
       messages.append(busyElement);
+      console.log("wait for le finish");
     }
     return;
   }
@@ -159,7 +160,6 @@ export async function sendMessage() {
     }
   }
 
-  const input = document.getElementById("input");
   if (!input) return;
 
   const response = await fetch(`${apiUrl}/chats/${currentChat}/messages`, {
