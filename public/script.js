@@ -137,6 +137,9 @@ export async function createChat() {
 }
 
 export async function sendMessage() {
+  const messageText = input.value;
+  input.value = "";
+
   const messages = document.getElementById("lechonk");
   if (!messages) return;
 
@@ -164,7 +167,7 @@ export async function sendMessage() {
 
   const response = await fetch(`${apiUrl}/chats/${currentChat}/messages`, {
     method: "POST",
-    body: input.value,
+    body: messageText,
     credentials: "include",
   });
   if (!response.ok || !response.body) {
@@ -177,7 +180,7 @@ export async function sendMessage() {
 
     let userMessage = document.createElement("p");
     userMessage.classList.add("user-message");
-    userMessage.innerHTML = input.value;
+    userMessage.innerHTML = messageText;
     usrContainer.append(userMessage);
     messages.append(usrContainer);
 
@@ -194,7 +197,7 @@ export async function sendMessage() {
 
   let userMessage = document.createElement("p");
   userMessage.classList.add("user-message");
-  userMessage.innerHTML = input.value;
+  userMessage.innerHTML = messageText;
   usrContainer.append(userMessage);
   messages.append(usrContainer);
 
