@@ -19,6 +19,10 @@ function sendMessageKeyPress(event) {
   }
 }
 
+function scrollToBottom() {
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
 async function nukeToken() {
   await fetch(`${apiUrl}/logout`, {
     method: "POST",
@@ -57,6 +61,7 @@ async function getChats() {
   parsedChats.forEach((chat) => {
     const chatElement = document.createElement("button");
     chatElement.innerHTML = chat.id;
+    chatElement.classList.add("chatButton");
     chatElement.addEventListener("click", () => {
       if (chat.id === currentChat) return;
       getMessages(chat.id);
@@ -65,12 +70,14 @@ async function getChats() {
     chats.append(chatElement);
   });
 
+  scrollToBottom();
+
   const newChatElement = document.createElement("button");
   newChatElement.innerHTML = "New Chat";
   newChatElement.addEventListener("click", () => {
-    getChats();
-    createChat().then((chatId) => {
-      getMessages(chatId);
+    createChat().then(async (chatId) => {
+      await getMessages(chatId);
+      getChats();
     });
   });
   chats.append(newChatElement);
@@ -119,6 +126,7 @@ async function getMessages(chatId) {
   });
 
   currentChat = chatId;
+  scrollToBottom();
 }
 
 export async function createChat() {
@@ -205,6 +213,8 @@ export async function sendMessage() {
   message.classList.add("ai-response");
   messages.append(message);
 
+  scrollToBottom();
+
   let fullText = "";
   let assistantReply = "";
   let i = 0;
@@ -217,6 +227,8 @@ export async function sendMessage() {
       i++;
       const parsed = parser.parse(fullText.slice(0, i));
       message.innerHTML = renderer.render(parsed);
+
+      scrollToBottom();
       setTimeout(typeWriter, speed);
     } else {
       busy = false;

@@ -1,16 +1,38 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Document</title>
-</head>
-<body>
-    <form action="/api/register" method="post">
-        <input type="text" name="username" placeholder="Username">
-        <input type="email" name="email" placeholder="Email">
-        <input type="password" name="password" placeholder="Password">
-        <button type="submit">Register</button>
-    </form>
-</body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Register</title>
+        <link rel="stylesheet" href="/style.css" />
+    </head>
+    <body>
+        <div class="auth-container">
+            <form class="auth-form" action="/api/register" method="post">
+                <h2>Register</h2>
+                <input
+                    class="auth-input"
+                    type="text"
+                    name="username"
+                    placeholder="Username"
+                    required
+                />
+                <input
+                    class="auth-input"
+                    type="email"
+                    name="email"
+                    placeholder="Email"
+                    required
+                />
+                <input
+                    class="auth-input"
+                    type="password"
+                    name="password"
+                    placeholder="Password"
+                    required
+                />
+                <button class="auth-button" type="submit">Register</button>
+            </form>
+        </div>
+    </body>
 </html>
