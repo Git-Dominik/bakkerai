@@ -22,14 +22,24 @@ const api = new Elysia({ prefix: "/api" })
   .use(jwt({ name: "jwt", secret: "SuperSecretKey" }))
   .post(
     "/register",
-    async ({ body, redirect }) => {
+    async ({ body, redirect, jwt, cookie }) => {
       const hashedPassword = await hash(body.password);
-      await prisma.user.create({
+      const user = await prisma.user.create({
         data: {
           name: body.username,
           email: body.email,
           password: hashedPassword,
         },
+      });
+
+      const token = await jwt.sign({
+        email: body.email,
+        sub: user.id.toString(),
+      });
+      cookie.auth.set({
+        value: token,
+        httpOnly: true,
+        maxAge: 7 * 86400,
       });
 
       return redirect("/");
@@ -82,9 +92,7 @@ const api = new Elysia({ prefix: "/api" })
     async ({ cookie: { auth }, jwt }) => {
       const token = auth?.value;
       if (!token) {
-        return new ElysiaCustomStatusResponse("Unauthorized", {
-          summary: "Invalid token",
-        });
+        return new ElysiaCustomStatusResponse("OK", "");
       }
 
       const { email } = await jwt.verify(token);
@@ -105,7 +113,7 @@ const api = new Elysia({ prefix: "/api" })
     },
     {
       cookie: t.Cookie({
-        auth: t.String(),
+        auth: t.Optional(t.String()),
       }),
     },
   )
@@ -131,7 +139,7 @@ const api = new Elysia({ prefix: "/api" })
       }
 
       let chat = await prisma.chat.findUnique({
-        where: { id: chatId },
+        where: { id: chatId, userId: user.id },
       });
       if (!chat) {
         return new ElysiaCustomStatusResponse("Not Found", {
@@ -149,7 +157,7 @@ const api = new Elysia({ prefix: "/api" })
     },
     {
       cookie: t.Cookie({
-        auth: t.String(),
+        auth: t.Optional(t.String()),
       }),
       params: t.Object({
         chatId: t.Number(),
@@ -186,7 +194,7 @@ const api = new Elysia({ prefix: "/api" })
     },
     {
       cookie: t.Cookie({
-        auth: t.String(),
+        auth: t.Optional(t.String()),
       }),
     },
   )
@@ -290,7 +298,7 @@ const api = new Elysia({ prefix: "/api" })
     },
     {
       cookie: t.Cookie({
-        auth: t.String(),
+        auth: t.Optional(t.String()),
       }),
       params: t.Object({
         chatId: t.Number(),
