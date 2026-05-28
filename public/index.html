@@ -4,13 +4,19 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="style.css" />
+        <script
+            src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta4/dist/htmx.min.js"
+            integrity="sha384-aWZK1NtOs/aWb/+YZdTM8q2JkWEshlMc9mgZ189numT9bwFhyAyYEoO4nO/2dTXt"
+            crossorigin="anonymous"
+        ></script>
         <title>Bakker AI</title>
     </head>
     <body>
-        <div class="header">
-            <a href="/login" class="nav-button">login</a>
-            <a href="/register" class="nav-button">register</a>
-        </div>
+        <div
+            hx-get="/api/comp/header"
+            hx-trigger="load"
+            hx-swap="outerHTML"
+        ></div>
 
         <div id="chats"></div>
         <div id="lechonk"></div>
