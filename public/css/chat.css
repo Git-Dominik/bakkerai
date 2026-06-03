@@ -1,0 +1,107 @@
+.hero-chat-card {
+    width: 290px;
+    flex-shrink: 0;
+    background: var(--white)
+}
+
+.chat-bar {
+    background: var(--black);
+    padding: 13px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid var(--gold)
+}
+
+.chat-ava {
+    width: 30px;
+    height: 30px;
+    background: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0
+}
+
+.chat-name-t {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--white)
+}
+
+.chat-status-t {
+    font-size: 10px;
+    color: rgba(255, 255, 255, .35)
+}
+
+.chat-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #4caf50;
+    margin-left: auto;
+    flex-shrink: 0
+}
+
+.chat-body-t {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px
+}
+
+.msg-t {
+    font-size: 12px;
+    line-height: 1.55;
+    padding: 9px 12px;
+    max-width: 90%
+}
+
+.msg-bot-t {
+    background: var(--grey-bg);
+    color: var(--black);
+    align-self: flex-start
+}
+
+.msg-user-t {
+    background: var(--gold);
+    color: var(--white);
+    align-self: flex-end;
+    font-weight: 500
+}
+
+.chat-inp-row {
+    padding: 10px 14px;
+    border-top: 1px solid var(--grey-light);
+    display: flex;
+    align-items: center;
+    gap: 8px
+}
+
+.chat-inp {
+    flex: 1;
+    font-family: var(--font);
+    font-size: 11px;
+    border: 1px solid var(--grey-light);
+    padding: 7px 11px;
+    color: var(--grey-text);
+    background: var(--grey-bg);
+    outline: none
+}
+
+.chat-send {
+    width: 28px;
+    height: 28px;
+    background: var(--gold);
+    border: none;
+    color: var(--white);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0
+}

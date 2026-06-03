@@ -1,0 +1,80 @@
+.cta-teal {
+    background: var(--teal);
+    padding: 72px 40px;
+    margin: 72px 0 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 48px;
+    align-items: center
+}
+
+.cta-teal-title {
+    font-size: clamp(24px, 3vw, 38px);
+    font-weight: 800;
+    color: var(--white);
+    line-height: 1.1;
+    letter-spacing: -.02em
+}
+
+.cta-teal-title em {
+    font-style: italic;
+    color: var(--gold)
+}
+
+.cta-teal-sub {
+    font-size: 14px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, .6);
+    margin-top: 14px;
+    line-height: 1.75;
+    max-width: 500px
+}
+
+.cta-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+    white-space: nowrap
+}
+
+.btn-white {
+    background: var(--white);
+    color: var(--black);
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 13px 28px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: background .15s, color .15s
+}
+
+.btn-white:hover {
+    background: var(--gold);
+    color: var(--white)
+}
+
+.btn-outline-white {
+    background: transparent;
+    color: var(--white);
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 12px 28px;
+    border: 1.5px solid rgba(255, 255, 255, .3);
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: border-color .15s
+}
+
+.btn-outline-white:hover {
+    border-color: rgba(255, 255, 255, .75)
+}

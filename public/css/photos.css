@@ -1,0 +1,117 @@
+.photos-section {
+    padding: 80px 0 0
+}
+
+.photos-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px
+}
+
+.photos-title {
+    font-size: clamp(24px, 3.2vw, 36px);
+    font-weight: 800;
+    letter-spacing: -.02em;
+    margin-bottom: 36px
+}
+
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px
+}
+
+.photo-card {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer
+}
+
+.photo-card:hover .pc-title {
+    color: var(--gold)
+}
+
+.photo-card:hover .pc-arrow {
+    transform: translate(3px, -3px)
+}
+
+.pc-img {
+    width: 100%;
+    aspect-ratio: 4/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 52px;
+    position: relative;
+    overflow: hidden
+}
+
+.pc-img-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, .45));
+    padding: 28px 14px 12px;
+    display: flex;
+    gap: 6px
+}
+
+.pc-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    background: var(--gold);
+    color: var(--white)
+}
+
+.pc-badge-w {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    background: var(--white);
+    color: var(--black)
+}
+
+.pc-badge-r {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    background: #c0392b;
+    color: var(--white)
+}
+
+.pc-body {
+    padding: 18px 0 6px
+}
+
+.pc-title {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    transition: color .15s
+}
+
+.pc-desc {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--grey-text);
+    margin-top: 7px;
+    line-height: 1.6
+}
+
+.pc-arrow {
+    display: inline-block;
+    margin-top: 14px;
+    transition: transform .18s;
+    color: var(--black)
+}
