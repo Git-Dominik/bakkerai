@@ -151,6 +151,7 @@ p {
     position: absolute;
     top: 20px;
     right: 20px;
+    position: fixed;
 }
 
 .nav-button {
@@ -173,6 +174,7 @@ p {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+    position: fixed;
     margin-bottom: 20px;
 }
 
