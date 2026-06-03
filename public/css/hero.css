@@ -1,0 +1,51 @@
+.hero-banner {
+    background: var(--teal)
+}
+
+.hero-inner {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 64px 40px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 48px
+}
+
+.hero-breadcrumb {
+    font-size: 11px;
+    color: rgba(255, 255, 255, .4);
+    margin-bottom: 18px;
+    letter-spacing: .04em
+}
+
+.hero-breadcrumb a {
+    color: rgba(255, 255, 255, .4);
+    text-decoration: none
+}
+
+.hero-breadcrumb span {
+    margin: 0 6px
+}
+
+.hero-title {
+    font-size: clamp(34px, 4.5vw, 52px);
+    font-weight: 800;
+    color: var(--white);
+    line-height: 1.07;
+    letter-spacing: -.025em
+}
+
+.hero-title em {
+    font-style: italic;
+    color: var(--gold)
+}
+
+.hero-sub {
+    font-size: 15px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, .65);
+    margin-top: 16px;
+    line-height: 1.7;
+    max-width: 460px
+}
