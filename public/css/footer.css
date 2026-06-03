@@ -1,0 +1,93 @@
+footer {
+    background: var(--black);
+    color: var(--white)
+}
+
+.footer-top {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 56px 40px 40px;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    gap: 48px
+}
+
+.footer-logo-svg {
+    height: 34px;
+    width: auto;
+    margin-bottom: 16px;
+    display: block
+}
+
+.footer-desc {
+    font-size: 13px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, .35);
+    line-height: 1.7
+}
+
+.fc h5 {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .3);
+    margin-bottom: 16px
+}
+
+.fc a {
+    display: block;
+    font-size: 13px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, .55);
+    text-decoration: none;
+    margin-bottom: 9px;
+    transition: color .15s
+}
+
+.fc a:hover {
+    color: var(--gold)
+}
+
+.footer-bar {
+    border-top: 1px solid rgba(255, 255, 255, .07);
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap
+}
+
+.footer-bar-links {
+    display: flex;
+    gap: 24px;
+    align-items: center
+}
+
+.footer-bar-links a {
+    font-size: 11px;
+    color: rgba(255, 255, 255, .25);
+    text-decoration: none;
+    transition: color .15s
+}
+
+.footer-bar-links a:hover {
+    color: rgba(255, 255, 255, .55)
+}
+
+.footer-bar-sep {
+    color: rgba(255, 255, 255, .12);
+    font-size: 11px
+}
+
+.footer-copy {
+    font-size: 11px;
+    color: rgba(255, 255, 255, .18)
+}
+
+.arrow-svg {
+    transition: transform .18s
+}

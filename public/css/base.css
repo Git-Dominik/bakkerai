@@ -1,0 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,600;0,700;0,800;1,700;1,800&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#b8922a;
+  --gold-light:#f5ead4;
+  --black:#111;
+  --white:#fff;
+  --grey-bg:#f7f7f5;
+  --grey-text:#666;
+  --grey-light:#e8e8e5;
+  --teal:#1a4a42;
+  --font:'Barlow',Arial,sans-serif;
+  --max:1080px;
+}
+body{font-family:var(--font);background:var(--white);color:var(--black);font-size:15px;overflow-x:hidden}
