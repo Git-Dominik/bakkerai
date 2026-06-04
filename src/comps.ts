@@ -9,26 +9,25 @@ export const compRoutes = new Elysia()
       const token = auth?.value;
       const loggedIn = token !== undefined && (await jwt.verify(token));
 
-      return `
-        <div class="header">
-          ${
-            loggedIn
-              ? `<button
+      return loggedIn
+        ? `
+          <div class="nav-right">
+            <button
               hx-post="/api/logout"
               hx-redirect="/login"
-              class="nav-button"
+              class="btn-register"
               hx-swap="none"
             >
-              logout
+              Logout
             </button>
-`
-              : `
-                      <a href="/login" class="nav-button" hx-boost="true">login</a>
-                      <a href="/register" class="nav-button" hx-boost="true">register</a>
-                      `
-          }
-        </div>
-      `;
+          </div>
+        `
+        : `
+          <div class="nav-right">
+            <a href="/login">Inloggen</a>
+            <a href="/register" class="btn-register">Registreren</a>
+          </div>
+        `;
     },
     {
       cookie: t.Cookie({

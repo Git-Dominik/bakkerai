@@ -2,6 +2,11 @@ import { Elysia, t, ElysiaCustomStatusResponse } from "elysia";
 import { modelMessageSchema, streamText } from "ai";
 import jwt from "@elysiajs/jwt";
 import { prisma, groq } from "./db";
+import {
+  getRecipesCategoriesTool,
+  getRecipesTool,
+  getRecipeTool,
+} from "./api/svh";
 
 export const chatRoutes = new Elysia()
   .use(jwt({ name: "jwt", secret: "SuperSecretKey" }))
@@ -171,6 +176,11 @@ export const chatRoutes = new Elysia()
 
       const stream = streamText({
         model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
+        tools: {
+          getRecipesCategoriesTool,
+          getRecipesTool,
+          getRecipeTool,
+        },
         system: `
         Je bent een culinaire assistent die uitsluitend gespecialiseerd is in recepten, kooktechnieken en voedselgerelateerde onderwerpen.
 

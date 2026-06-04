@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="../style.css" />
+        <script
+            src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta4/dist/htmx.min.js"
+            integrity="sha384-aWZK1NtOs/aWb/+YZdTM8q2JkWEshlMc9mgZ189numT9bwFhyAyYEoO4nO/2dTXt"
+            crossorigin="anonymous"
+        ></script>
+        <title>Bakker AI</title>
+    </head>
+    <body>
+        <div
+            hx-get="/api/comp/header"
+            hx-trigger="load"
+            hx-swap="innerHTML"
+        ></div>
+
+        <div id="chats"></div>
+        <div id="lechonk"></div>
+
+        <div id="input-bar">
+            <input id="input" placeholder="type here" type="text" />
+            <button id="butone">send</button>
+        </div>
+        <script type="module" src="script.js"></script>
+    </body>
+</html>

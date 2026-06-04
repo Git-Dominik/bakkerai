@@ -15,6 +15,7 @@ new Elysia()
   .use(api)
   .get("/register", file("public/register.html"))
   .get("/login", file("public/login.html"))
-  .get('/', () => file('./public/home.html'))
+  .get("/chat", file("public/chat.html"))
+  .get("/", () => file("./public/index.html"))
   .use(staticPlugin({ assets: "public", prefix: "" }))
   .listen(3000);
