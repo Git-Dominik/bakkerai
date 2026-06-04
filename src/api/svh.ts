@@ -1,45 +1,55 @@
+import { Mutex } from "async-mutex";
 import { firefox, devices, Cookie } from "playwright";
 
-const browser = await firefox.launch({ headless: false, slowMo: 100 });
+const browser = await firefox.launch({ headless: false, slowMo: 300 });
 
 export type Recipe = {};
 export type RecipeTheme = "Banket" | "Brood";
+export type RecipeCategory = string;
 
-export async function login(email: string, password: string): Promise<Cookie> {
-  if (await Bun.file("cookie").exists()) {
-    const cookieText = await Bun.file("cookie").text();
-    return JSON.parse(cookieText);
-  }
+const mutex = new Mutex();
+
+export function verifyCookie(cookie: Cookie): boolean {
+  return cookie.expires > Date.now() / 1000;
+}
+
+export async function login(email: string, password: string) {
+  await mutex.acquire();
 
   const context = await browser.newContext();
+
+  if (await Bun.file("storage.json").exists()) {
+    await context.setStorageState("storage.json");
+    const crCookie = (await context.cookies()).find((c) => c.name === "CR");
+    if (crCookie && verifyCookie(crCookie)) {
+      console.log("cookie is valid");
+      mutex.release();
+      await context.close();
+      return;
+    }
+  }
+
   const page = await context.newPage();
 
   await page.goto("https://svhbakkerstalent.nl/login.html");
 
   await page.fill("input[id='email']", email);
   await page.fill("input[class='password']", password);
+  await page.click(".rememberme label");
 
   await page.click("input[type='submit']");
 
-  const cookies = await context.cookies();
+  await context.storageState({ path: "storage.json" });
   await context.close();
 
-  const sessionCookie = cookies.find((c) => c.name === "PHPSESSID");
-  if (!sessionCookie) {
-    throw new Error("PHPSESSID cookie not found");
-  }
-
-  await Bun.write("cookie", JSON.stringify(sessionCookie, null, 2));
-
-  return sessionCookie;
+  mutex.release();
 }
 
 export async function getRecipesCategories(
-  cookie: Cookie,
   recipeTheme: RecipeTheme,
-): Promise<string[]> {
+): Promise<RecipeCategory[]> {
   const context = await browser.newContext(devices["Desktop Firefox"]);
-  await context.addCookies([cookie]);
+  await context.setStorageState("storage.json");
 
   const page = await context.newPage();
   await page.goto("https://svhbakkerstalent.nl/Recepten");
@@ -63,8 +73,8 @@ export async function getRecipesCategories(
   await categoryFilter.click();
 
   // reset category theme
-  let resetButton = page.locator(".option.undo").filter({ visible: true });
-  if (resetButton) await resetButton.click();
+  const resetButton = page.locator(".option.undo").filter({ visible: true });
+  if ((await resetButton.count()) > 0) await resetButton.click();
 
   // get all categories for the selected theme
   const categories = await page.locator(".list-item.theme-block").all();
@@ -83,12 +93,11 @@ export async function getRecipesCategories(
 }
 
 export async function getRecipes(
-  cookie: Cookie,
   recipeTheme: RecipeTheme,
-  recipeCategory: string,
+  recipeCategory: RecipeCategory,
 ): Promise<string[]> {
   const context = await browser.newContext(devices["Desktop Firefox"]);
-  await context.addCookies([cookie]);
+  await context.setStorageState("storage.json");
 
   const page = await context.newPage();
   await page.goto("https://svhbakkerstalent.nl/Recepten");
@@ -135,12 +144,9 @@ export async function getRecipes(
   return recipeNames;
 }
 
-export async function getRecipe(
-  cookie: Cookie,
-  recipeName: string,
-): Promise<Recipe> {
+export async function getRecipe(recipeName: string): Promise<Recipe> {
   const context = await browser.newContext(devices["Desktop Firefox"]);
-  await context.addCookies([cookie]);
+  await context.setStorageState("storage.json");
 
   const page = await context.newPage();
   await page.goto(
