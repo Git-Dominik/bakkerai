@@ -1,6 +1,10 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+<<<<<<< HEAD
 cookie
+=======
+storage.json
+>>>>>>> d21095852e68d2ba1fa2d28ddd64cec530771d6f
 
 # dependencies
 /node_modules

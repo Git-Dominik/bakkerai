@@ -120,10 +120,7 @@ async function getMessages(chatId) {
     } else {
       const messageElement = document.createElement("p");
       messageElement.classList.add("ai-response");
-
-      const parsed = parser.parse(message.content);
-      messageElement.innerHTML = renderer.render(parsed);
-
+      messageElement.innerHTML = message.content;
       messages.append(messageElement);
     }
   });
