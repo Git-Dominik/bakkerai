@@ -19,12 +19,8 @@
         "commonmark": "^0.31.2",
         "elysia": "latest",
         "playwright": "^1.60.0",
-<<<<<<< HEAD
-        "prisma-adapter-bun-sqlite": "^0.8.0"
-=======
         "prisma-adapter-bun-sqlite": "^0.8.0",
         "zod": "^4.4.3"
->>>>>>> d21095852e68d2ba1fa2d28ddd64cec530771d6f
     },
     "devDependencies": {
         "@types/better-sqlite3": "^7.6.13",

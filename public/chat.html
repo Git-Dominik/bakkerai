@@ -1,30 +1,61 @@
-<!doctype html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="stylesheet" href="../style.css" />
-        <script
-            src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta4/dist/htmx.min.js"
-            integrity="sha384-aWZK1NtOs/aWb/+YZdTM8q2JkWEshlMc9mgZ189numT9bwFhyAyYEoO4nO/2dTXt"
-            crossorigin="anonymous"
-        ></script>
-        <title>Bakker AI</title>
-    </head>
-    <body>
-        <div
-            hx-get="/api/comp/header"
-            hx-trigger="load"
-            hx-swap="innerHTML"
-        ></div>
-
-        <div id="chats"></div>
-        <div id="lechonk"></div>
-
-        <div id="input-bar">
-            <input id="input" placeholder="type here" type="text" />
-            <button id="butone">send</button>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../style.css" />
+    <script
+        src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"
+        integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
+        crossorigin="anonymous"
+    ></script>
+    <title>BakkerBot — Talland College</title>
+</head>
+<body>
+    <nav>
+        <div class="nav-inner">
+            <div class="nav-left">
+                <a href="/" class="nav-logo">
+                    <svg
+                        viewBox="0 0 450 80"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="white"
+                    >
+                        <path
+                            d="m19.3209 12.9104h-19.3209v-12.9104h53.6279v12.9104h-19.3209v54.7969h-14.9861zm17.1614 40.0709c0-9.9459 6.7854-15.8749 22.3376-17.5018l10.6491-1.1468v-.6688c0-5.451-3.7707-8.5119-9.4239-8.5119-5.184 0-9.0478 2.9645-9.6139 8.3191h-13.9489c1.2253-11.2856 10.8392-19.5083 23.7508-19.5083 13.8539 0 23.8459 7.3631 23.8459 21.4223v32.3242h-14.608v-5.9289c-2.4505 4.2077-8.1987 6.6942-14.703 6.6942-11.2153 0-18.2837-6.1198-18.2837-15.4933zm21.3004 4.4949c6.8803 0 11.4033-4.8765 11.6863-12.5288l-10.3681 1.1469c-5.5601.5744-8.0106 2.9645-8.0106 6.2162 0 3.0609 2.6385 5.1637 6.6924 5.1637zm29.594-57.4762h14.6083v67.7073h-14.6083zm18.0003 0h14.608v67.7073h-14.608zm16.786 52.9813c0-9.9459 6.785-15.8749 22.337-17.5018l10.649-1.1468v-.6688c0-5.451-3.77-8.5119-9.424-8.5119-5.184 0-9.047 2.9645-9.614 8.3191h-13.948c1.225-11.2856 10.839-19.5083 23.75-19.5083 13.854 0 23.846 7.3631 23.846 21.4223v32.3242h-14.608v-5.9289c-2.45 4.2077-8.198 6.6942-14.703 6.6942-11.215 0-18.283-6.1198-18.283-15.4933zm21.3 4.4949c6.88 0 11.403-4.8765 11.686-12.5288l-10.368 1.1469c-5.56.5744-8.01 2.9645-8.01 6.2162 0 3.0609 2.638 5.1637 6.692 5.1637zm29.388-42.7481h14.608v6.2162c2.546-3.539 8.765-6.9815 16.211-6.9815 11.404 0 19.416 7.6503 19.416 19.0302v34.7143h-14.515v-30.7937c0-5.929-3.392-9.946-9.236-9.946-7.163 0-11.874 5.6418-11.874 17.0218v23.7179h-14.608v-52.9792zm52.205 26.4896c0-16.7365 10.178-27.2549 24.976-27.2549 6.502 0 12.252 2.4865 15.362 6.5978v-20.5606h14.608v67.7073h-14.608v-5.8325c-3.11 4.1113-8.672 6.5978-15.174 6.5978-14.986 0-25.164-10.5204-25.164-27.2549zm27.521 14.6317c7.635 0 12.819-5.8346 12.819-14.6317s-5.184-14.7281-12.819-14.7281c-7.634 0-12.818 5.929-12.818 14.7281s5.184 14.6317 12.818 14.6317z"
+                        />
+                    </svg>
+                </a>
+                <div class="nav-sep"></div>
+                <span class="nav-title">BakkerBot</span>
+            </div>
+            <div
+                hx-get="/api/comp/header"
+                hx-trigger="load"
+                hx-swap="outerHTML"
+            ></div>
+            <div class="nav-status">
+                <div class="nav-dot"></div>
+                Online
+            </div>
         </div>
-        <script type="module" src="script.js"></script>
-    </body>
-</html>
+    </nav>
+
+    <div class="main">
+        <div id="chats"></div>
+
+        <div class="chat-col">
+            <div id="lechonk"></div>
+
+            <div id="input-bar">
+                <input
+                    id="input"
+                    placeholder="Stel een vraag over je opleiding..."
+                    type="text"
+                    autocomplete="off"
+                />
+                <button id="butone" aria-label="Versturen">↑</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../script.js"></script>
+</body>
