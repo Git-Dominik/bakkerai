@@ -1,3 +1,19 @@
+<<<<<<< HEAD
+import { firefox, devices, Cookie } from "playwright";
+
+const browser = await firefox.launch({ headless: false, slowMo: 100 });
+
+export type Recipe = {};
+export type RecipeTheme = "Banket" | "Brood";
+
+export async function login(email: string, password: string): Promise<Cookie> {
+  if (await Bun.file("cookie").exists()) {
+    const cookieText = await Bun.file("cookie").text();
+    return JSON.parse(cookieText);
+  }
+
+  const context = await browser.newContext();
+=======
 import { Tool, tool } from "ai";
 import { Mutex } from "async-mutex";
 import path from "path/win32";
@@ -92,12 +108,37 @@ export async function login(email: string, password: string) {
     }
   }
 
+>>>>>>> d21095852e68d2ba1fa2d28ddd64cec530771d6f
   const page = await context.newPage();
 
   await page.goto("https://svhbakkerstalent.nl/login.html");
 
   await page.fill("input[id='email']", email);
   await page.fill("input[class='password']", password);
+<<<<<<< HEAD
+
+  await page.click("input[type='submit']");
+
+  const cookies = await context.cookies();
+  await context.close();
+
+  const sessionCookie = cookies.find((c) => c.name === "PHPSESSID");
+  if (!sessionCookie) {
+    throw new Error("PHPSESSID cookie not found");
+  }
+
+  await Bun.write("cookie", JSON.stringify(sessionCookie, null, 2));
+
+  return sessionCookie;
+}
+
+export async function getRecipesCategories(
+  cookie: Cookie,
+  recipeTheme: RecipeTheme,
+): Promise<string[]> {
+  const context = await browser.newContext(devices["Desktop Firefox"]);
+  await context.addCookies([cookie]);
+=======
   await page.click(".rememberme label");
 
   await page.click("input[type='submit']");
@@ -113,6 +154,7 @@ export async function getRecipesCategories(
 ): Promise<RecipeCategory[]> {
   const context = await browser.newContext(devices["Desktop Firefox"]);
   await context.setStorageState("storage.json");
+>>>>>>> d21095852e68d2ba1fa2d28ddd64cec530771d6f
 
   const page = await context.newPage();
   await page.goto("https://svhbakkerstalent.nl/Recepten");
@@ -136,8 +178,13 @@ export async function getRecipesCategories(
   await categoryFilter.click();
 
   // reset category theme
+<<<<<<< HEAD
+  let resetButton = page.locator(".option.undo").filter({ visible: true });
+  if (resetButton) await resetButton.click();
+=======
   const resetButton = page.locator(".option.undo").filter({ visible: true });
   if ((await resetButton.count()) > 0) await resetButton.click();
+>>>>>>> d21095852e68d2ba1fa2d28ddd64cec530771d6f
 
   // get all categories for the selected theme
   const categories = await page.locator(".list-item.theme-block").all();
@@ -156,11 +203,20 @@ export async function getRecipesCategories(
 }
 
 export async function getRecipes(
+<<<<<<< HEAD
+  cookie: Cookie,
+  recipeTheme: RecipeTheme,
+  recipeCategory: string,
+): Promise<string[]> {
+  const context = await browser.newContext(devices["Desktop Firefox"]);
+  await context.addCookies([cookie]);
+=======
   recipeTheme: RecipeTheme,
   recipeCategory: RecipeCategory,
 ): Promise<string[]> {
   const context = await browser.newContext(devices["Desktop Firefox"]);
   await context.setStorageState("storage.json");
+>>>>>>> d21095852e68d2ba1fa2d28ddd64cec530771d6f
 
   const page = await context.newPage();
   await page.goto("https://svhbakkerstalent.nl/Recepten");
@@ -207,14 +263,37 @@ export async function getRecipes(
   return recipeNames;
 }
 
+<<<<<<< HEAD
+export async function getRecipe(
+  cookie: Cookie,
+  recipeName: string,
+): Promise<Recipe> {
+  const context = await browser.newContext(devices["Desktop Firefox"]);
+  await context.addCookies([cookie]);
+=======
 export async function getRecipe(recipeName: string): Promise<Recipe> {
   const context = await browser.newContext(devices["Desktop Firefox"]);
   await context.setStorageState("storage.json");
+>>>>>>> d21095852e68d2ba1fa2d28ddd64cec530771d6f
 
   const page = await context.newPage();
   await page.goto(
     `https://svhbakkerstalent.nl/Recepten/Productkaarten/${recipeName}`,
   );
+<<<<<<< HEAD
+  await page.waitForEvent("domcontentloaded");
+
+  const recipeText = await page.locator(".headText").first().textContent();
+  const recipeBlocks = (await page.locator(".product-text").all()).map(
+    async (h) => await h.textContent(),
+  );
+
+  return {
+    name: recipeText ?? "",
+    blocks: recipeBlocks,
+  };
+}
+=======
 
   const recipeText = await page.locator(".headText").first().textContent();
   const personSize = await page.locator(".headSubText").first().textContent();
@@ -258,3 +337,4 @@ await login(email, password);
 
 // const recipe = await getRecipe("BB-Kleinbrood-Abrikozenbolletjes");
 // console.log(recipe);
+>>>>>>> d21095852e68d2ba1fa2d28ddd64cec530771d6f
