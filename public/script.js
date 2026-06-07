@@ -2,7 +2,7 @@ import { Parser, HtmlRenderer } from "https://esm.sh/commonmark";
 
 const parser = new Parser();
 const renderer = new HtmlRenderer();
-const history = [];
+const messageHistory = [];
 const speed = 5;
 
 const apiUrl = `${window.location.origin}/api`;
@@ -12,6 +12,19 @@ const button = document.getElementById("butone");
 
 let currentChat;
 let busy = false;
+
+function getChatIdFromPath() {
+  const match = window.location.pathname.match(/^\/chat\/(.+)$/);
+  return match ? match[1] : null;
+}
+
+function navigateToChat(chatId) {
+  const newPath = chatId ? `/chat/${chatId}` : "/chat";
+  if (window.location.pathname !== newPath) {
+    window.history.pushState({ chatId }, "", newPath);
+  }
+  currentChat = chatId;
+}
 
 function sendMessageKeyPress(event) {
   if (event.key === "Enter") {
@@ -34,93 +47,128 @@ async function getChats() {
   const chats = document.getElementById("chats");
   if (!chats) return;
 
-  const response = await fetch(`${apiUrl}/chats`, {
-    method: "GET",
-    credentials: "include",
-  });
+  let response;
+  try {
+    response = await fetch(`${apiUrl}/chats`, {
+      method: "GET",
+      credentials: "include",
+    });
+  } catch {
+    return;
+  }
+
   if (!response.ok) {
     if (response.status === 401) {
       nukeToken();
     }
-
-    let error = JSON.parse(await response.text());
-    let message = document.createElement("p");
-    message.innerHTML = error.summary || "Error loading chats";
-
+    const message = document.createElement("p");
+    try {
+      const error = JSON.parse(await response.text());
+      message.textContent = error.summary || "Error loading chats";
+    } catch {
+      message.textContent = "Error loading chats";
+    }
     chats.append(message);
     return;
   }
 
-  const parsedChats = JSON.parse(await response.text());
-  if (parsedChats.length !== 0) {
-    getMessages(parsedChats[0].id);
+  let parsedChats;
+  try {
+    parsedChats = JSON.parse(await response.text());
+  } catch {
+    return;
   }
 
   chats.innerHTML = "";
 
   parsedChats.forEach((chat) => {
     const chatElement = document.createElement("button");
-    chatElement.innerHTML = chat.id;
+    chatElement.textContent = `Chat ${chat.id}`;
     chatElement.classList.add("chatButton");
     chatElement.addEventListener("click", () => {
       if (chat.id === currentChat) return;
+      navigateToChat(chat.id);
       getMessages(chat.id);
     });
-
     chats.append(chatElement);
   });
 
   scrollToBottom();
 
   const newChatElement = document.createElement("button");
-  newChatElement.innerHTML = "New Chat";
+  newChatElement.textContent = "New Chat";
   newChatElement.addEventListener("click", () => {
     createChat().then(async (chatId) => {
+      if (!chatId) return;
+      navigateToChat(chatId);
       await getMessages(chatId);
       getChats();
     });
   });
   chats.append(newChatElement);
+
+  const chatIdFromPath = getChatIdFromPath();
+  if (chatIdFromPath && parsedChats.some((c) => c.id === chatIdFromPath)) {
+    getMessages(chatIdFromPath);
+  } else if (parsedChats.length > 0) {
+    navigateToChat(parsedChats[0].id);
+    getMessages(parsedChats[0].id);
+  }
 }
 
 async function getMessages(chatId) {
   const messages = document.getElementById("lechonk");
   if (!messages) return;
 
-  const response = await fetch(`${apiUrl}/chats/${chatId}/messages`, {
-    method: "GET",
-    credentials: "include",
-  });
+  let response;
+  try {
+    response = await fetch(`${apiUrl}/chats/${chatId}/messages`, {
+      method: "GET",
+      credentials: "include",
+    });
+  } catch {
+    return;
+  }
+
   if (!response.ok) {
     if (response.status === 401) {
       nukeToken();
     }
-
-    let error = JSON.parse(await response.text());
-    let message = document.createElement("p");
-    message.innerHTML = error.summary || "Error loading messages";
-
+    const message = document.createElement("p");
+    try {
+      const error = JSON.parse(await response.text());
+      message.textContent = error.summary || "Error loading messages";
+    } catch {
+      message.textContent = "Error loading messages";
+    }
     messages.append(message);
     return;
   }
 
   messages.innerHTML = "";
 
-  const parsedMessages = JSON.parse(await response.text());
-  parsedMessages.data.forEach((message) => {
-    const isUser = message.userId || message.role === "user";
+  let parsedMessages;
+  try {
+    parsedMessages = JSON.parse(await response.text());
+  } catch {
+    return;
+  }
+
+  parsedMessages.data.forEach((msg) => {
+    const isUser = msg.userId || msg.role === "user";
     if (isUser) {
       const usrContainer = document.createElement("div");
       usrContainer.classList.add("user-message-container");
       const messageElement = document.createElement("p");
       messageElement.classList.add("user-message");
-      messageElement.innerHTML = message.content;
+      messageElement.textContent = msg.content || "";
       usrContainer.append(messageElement);
       messages.append(usrContainer);
     } else {
       const messageElement = document.createElement("p");
       messageElement.classList.add("ai-response");
-      messageElement.innerHTML = message.content;
+      const parsed = parser.parse(msg.content || "");
+      messageElement.innerHTML = renderer.render(parsed);
       messages.append(messageElement);
     }
   });
@@ -130,10 +178,16 @@ async function getMessages(chatId) {
 }
 
 export async function createChat() {
-  const response = await fetch(`${apiUrl}/chats`, {
-    method: "POST",
-    credentials: "include",
-  });
+  let response;
+  try {
+    response = await fetch(`${apiUrl}/chats`, {
+      method: "POST",
+      credentials: "include",
+    });
+  } catch {
+    return;
+  }
+
   if (!response.ok) {
     if (response.status === 401) {
       nukeToken();
@@ -155,9 +209,8 @@ export async function sendMessage() {
     if (!document.getElementById("busy-warning")) {
       const busyElement = document.createElement("p");
       busyElement.id = "busy-warning";
-      busyElement.innerHTML = "hollon im cookin";
+      busyElement.textContent = "hollon im cookin";
       messages.append(busyElement);
-      console.log("wait for le finish");
     }
     return;
   }
@@ -169,15 +222,24 @@ export async function sendMessage() {
       busy = false;
       return;
     }
+    navigateToChat(currentChat);
+    getChats();
   }
 
   if (!input) return;
 
-  const response = await fetch(`${apiUrl}/chats/${currentChat}/messages`, {
-    method: "POST",
-    body: messageText,
-    credentials: "include",
-  });
+  let response;
+  try {
+    response = await fetch(`${apiUrl}/chats/${currentChat}/messages`, {
+      method: "POST",
+      body: messageText,
+      credentials: "include",
+    });
+  } catch {
+    busy = false;
+    return;
+  }
+
   if (!response.ok || !response.body) {
     if (response.status === 401) {
       nukeToken();
@@ -185,16 +247,15 @@ export async function sendMessage() {
 
     const usrContainer = document.createElement("div");
     usrContainer.classList.add("user-message-container");
-
-    let userMessage = document.createElement("p");
+    const userMessage = document.createElement("p");
     userMessage.classList.add("user-message");
-    userMessage.innerHTML = messageText;
+    userMessage.textContent = messageText;
     usrContainer.append(userMessage);
     messages.append(usrContainer);
 
-    let error = document.createElement("p");
+    const error = document.createElement("p");
     error.classList.add("ai-response");
-    error.innerHTML = "An error occurred";
+    error.textContent = "An error occurred";
     messages.append(error);
     busy = false;
     return;
@@ -202,10 +263,9 @@ export async function sendMessage() {
 
   const usrContainer = document.createElement("div");
   usrContainer.classList.add("user-message-container");
-
-  let userMessage = document.createElement("p");
+  const userMessage = document.createElement("p");
   userMessage.classList.add("user-message");
-  userMessage.innerHTML = messageText;
+  userMessage.textContent = messageText;
   usrContainer.append(userMessage);
   messages.append(usrContainer);
 
@@ -227,7 +287,6 @@ export async function sendMessage() {
       i++;
       const parsed = parser.parse(fullText.slice(0, i));
       message.innerHTML = renderer.render(parsed);
-
       scrollToBottom();
       setTimeout(typeWriter, speed);
     } else {
@@ -247,11 +306,22 @@ export async function sendMessage() {
     if (i === fullText.length - chonk.length) typeWriter();
   }
 
-  history.push({ role: "assistant", content: assistantReply });
-  console.log(history);
+  messageHistory.push({ role: "assistant", content: assistantReply });
 }
 
 input.addEventListener("keypress", sendMessageKeyPress);
 button.addEventListener("click", sendMessage);
+
+window.addEventListener("popstate", () => {
+  const chatId = getChatIdFromPath();
+  if (chatId) {
+    currentChat = chatId;
+    getMessages(chatId);
+  } else if (currentChat) {
+    currentChat = null;
+    const el = document.getElementById("lechonk");
+    if (el) el.innerHTML = "";
+  }
+});
 
 await getChats();
