@@ -9,13 +9,15 @@ const apiUrl = `${window.location.origin}/api`;
 
 const input = document.getElementById("input");
 const button = document.getElementById("butone");
+const lechonk = document.getElementById("lechonk");
 
 let currentChat;
 let busy = false;
+let userScrolledUp = false;
 
 function getChatIdFromPath() {
-  const match = window.location.pathname.match(/^\/chat\/(.+)$/);
-  return match ? match[1] : null;
+  const match = window.location.pathname.match(/^\/chat\/(\d+)$/);
+  return match ? Number(match[1]) : null;
 }
 
 function navigateToChat(chatId) {
@@ -32,8 +34,13 @@ function sendMessageKeyPress(event) {
   }
 }
 
+function isNearBottom() {
+  return lechonk.scrollTop + lechonk.clientHeight >= lechonk.scrollHeight - 100;
+}
+
 function scrollToBottom() {
-  window.scrollTo(0, document.body.scrollHeight);
+  if (userScrolledUp) return;
+  lechonk.scrollTop = lechonk.scrollHeight;
 }
 
 async function nukeToken() {
@@ -87,6 +94,7 @@ async function getChats() {
     chatElement.classList.add("chatButton");
     chatElement.addEventListener("click", () => {
       if (chat.id === currentChat) return;
+      userScrolledUp = false;
       navigateToChat(chat.id);
       getMessages(chat.id);
     });
@@ -98,6 +106,7 @@ async function getChats() {
   const newChatElement = document.createElement("button");
   newChatElement.textContent = "New Chat";
   newChatElement.addEventListener("click", () => {
+    userScrolledUp = false;
     createChat().then(async (chatId) => {
       if (!chatId) return;
       navigateToChat(chatId);
@@ -311,6 +320,10 @@ export async function sendMessage() {
 
 input.addEventListener("keypress", sendMessageKeyPress);
 button.addEventListener("click", sendMessage);
+
+lechonk.addEventListener("scroll", () => {
+  userScrolledUp = !isNearBottom();
+});
 
 window.addEventListener("popstate", () => {
   const chatId = getChatIdFromPath();
