@@ -16,6 +16,7 @@ new Elysia()
   .get("/register", file("public/register.html"))
   .get("/login", file("public/login.html"))
   .get("/chat", file("public/chat.html"))
+  .get("/chat/*", file("public/chat.html"))
   .get("/", () => file("./public/index.html"))
   .use(staticPlugin({ assets: "public", prefix: "" }))
   .listen(3000);
