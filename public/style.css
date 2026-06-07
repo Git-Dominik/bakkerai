@@ -148,6 +148,8 @@ nav {
 #lechonk {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
     padding: 24px 20px;
     display: flex;
     flex-direction: column;
