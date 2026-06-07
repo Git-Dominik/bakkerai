@@ -25,6 +25,7 @@ model User {
 
 model Chat {
   id       Int       @id @default(autoincrement())
+  topic    String?
   messages Message[]
   user     User      @relation(fields: [userId], references: [id])
   userId   Int
