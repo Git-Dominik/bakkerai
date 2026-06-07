@@ -57,14 +57,14 @@ export const getRecipesTool = tool({
 });
 
 export const getRecipeTool = tool({
-  description: "Get detailed recipe information by name",
+  description:
+    "Get a single recipe by its slug (as returned by getRecipesTool, e.g. 'BB-Kleinbrood-Abrikozenbolletjes'). Do not pass display names.",
   inputSchema: z.object({
-    recipeName: z.string().describe("The recipe slug"),
+    recipeName: z
+      .string()
+      .describe("The recipe slug as returned by getRecipesTool"),
   }),
-  execute: ({ recipeName }) => {
-    console.log(`[getRecipeTool] called with recipeName: ${recipeName}`);
-    return getRecipe(recipeName);
-  },
+  execute: ({ recipeName }) => getRecipe(recipeName),
 });
 
 export async function verifyCookie(cookie: Cookie): Promise<boolean> {
