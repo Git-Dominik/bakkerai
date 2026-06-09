@@ -1,0 +1,148 @@
+body.auth-page {
+  background: var(--grey-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 420px;
+  background: var(--white);
+  border: 1px solid var(--grey-light);
+  border-radius: 4px;
+  padding: 48px 44px 44px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.05);
+}
+
+.logo {
+  margin-bottom: 40px;
+  display: block;
+}
+
+.logo svg {
+  width: 110px;
+  height: auto;
+  display: block;
+}
+
+.heading {
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1.15;
+  color: var(--black);
+  margin-bottom: 6px;
+  letter-spacing: -0.3px;
+}
+
+.heading em {
+  font-style: italic;
+  color: var(--teal);
+}
+
+.subheading {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--grey-text);
+  margin-bottom: 36px;
+  line-height: 1.5;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--grey-text);
+  margin-bottom: 7px;
+}
+
+.auth-input {
+  width: 100%;
+  background: var(--grey-bg);
+  border: 1px solid var(--grey-light);
+  border-radius: 3px;
+  padding: 13px 16px;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--black);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none;
+}
+
+.auth-input::placeholder {
+  color: #bbb;
+}
+
+.auth-input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(26, 74, 66, 0.10);
+  background: var(--white);
+}
+
+.auth-button {
+  width: 100%;
+  background: var(--teal);
+  color: var(--white);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  border: none;
+  border-radius: 3px;
+  padding: 14px;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.auth-button:hover {
+  background: var(--teal-dark);
+}
+
+.auth-button:active {
+  transform: scale(0.99);
+}
+
+.auth-footer {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--grey-text);
+}
+
+.auth-footer a {
+  color: var(--teal);
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+
+.auth-footer a:hover {
+  opacity: 0.75;
+}
+
+@media (max-width: 480px) {
+  .auth-container {
+    padding: 36px 28px 32px;
+  }
+
+  .heading {
+    font-size: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
