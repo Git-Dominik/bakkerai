@@ -3,7 +3,7 @@ import { Mutex } from "async-mutex";
 import { firefox, devices, Cookie } from "playwright";
 import z from "zod";
 
-const browser = await firefox.launch({ headless: false, slowMo: 300 });
+const browser = await firefox.launch();
 
 export type Recipe = {
   name: string;
@@ -291,8 +291,8 @@ export async function getRecipe(recipeName: string): Promise<Recipe> {
     name: (recipeText ?? "").replace(/\s+/g, " ").trim(),
     personSize: (personSize ?? "").replace(/\s+/g, " ").trim(),
     slug: recipeName,
-    intro: introText,
-    imageUrl: imageUrl,
+    intro: introText ?? undefined,
+    imageUrl: imageUrl ?? undefined,
     blocks: recipeBlocks,
     url: `https://svhbakkerstalent.nl/Recepten/Productkaarten/${recipeName}`,
   };

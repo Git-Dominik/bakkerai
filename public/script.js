@@ -15,6 +15,16 @@ let currentChat;
 let busy = false;
 let userScrolledUp = false;
 
+window.useSuggestion = function (btn) {
+  input.value = btn.textContent.trim();
+  input.focus();
+};
+
+const emptyState = document.getElementById("empty-state");
+function showEmptyState() {
+  emptyState.classList.toggle("visible", lechonk.children.length === 0);
+}
+
 function getChatIdFromPath() {
   const match = window.location.pathname.match(/^\/chat\/(\d+)$/);
   return match ? Number(match[1]) : null;
@@ -104,24 +114,20 @@ async function getChats() {
   scrollToBottom();
 
   const newChatElement = document.createElement("button");
-  newChatElement.textContent = "New Chat";
+  newChatElement.textContent = "+ New Chat";
+  newChatElement.classList.add("new-chat-btn");
   newChatElement.addEventListener("click", () => {
     userScrolledUp = false;
-    createChat().then(async (chatId) => {
-      if (!chatId) return;
-      navigateToChat(chatId);
-      await getMessages(chatId);
-      getChats();
-    });
+    currentChat = null;
+    lechonk.innerHTML = "";
+    navigateToChat(null);
+    showEmptyState();
   });
   chats.append(newChatElement);
 
   const chatIdFromPath = getChatIdFromPath();
   if (chatIdFromPath && parsedChats.some((c) => c.id === chatIdFromPath)) {
     getMessages(chatIdFromPath);
-  } else if (parsedChats.length > 0) {
-    navigateToChat(parsedChats[0].id);
-    getMessages(parsedChats[0].id);
   }
 }
 
@@ -176,6 +182,7 @@ async function getMessages(chatId) {
     } else {
       const messageElement = document.createElement("p");
       messageElement.classList.add("ai-response");
+      console.log(msg.content);
       const parsed = parser.parse(msg.content || "");
       messageElement.innerHTML = renderer.render(parsed);
       messages.append(messageElement);
@@ -184,6 +191,7 @@ async function getMessages(chatId) {
 
   currentChat = chatId;
   scrollToBottom();
+  showEmptyState();
 }
 
 export async function createChat() {
@@ -232,7 +240,6 @@ export async function sendMessage() {
       return;
     }
     navigateToChat(currentChat);
-    getChats();
   }
 
   if (!input) return;
@@ -315,6 +322,7 @@ export async function sendMessage() {
     if (i === fullText.length - chonk.length) typeWriter();
   }
 
+  showEmptyState();
   messageHistory.push({ role: "assistant", content: assistantReply });
 }
 
@@ -338,3 +346,4 @@ window.addEventListener("popstate", () => {
 });
 
 await getChats();
+showEmptyState();

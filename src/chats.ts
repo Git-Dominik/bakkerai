@@ -1,5 +1,5 @@
 import { Elysia, t, ElysiaCustomStatusResponse } from "elysia";
-import { modelMessageSchema, streamText } from "ai";
+import { generateText, modelMessageSchema, stepCountIs, streamText } from "ai";
 import jwt from "@elysiajs/jwt";
 import { prisma, groq } from "./db";
 import {
@@ -15,7 +15,9 @@ export const chatRoutes = new Elysia()
     async ({ cookie: { auth }, jwt }) => {
       const token = auth?.value;
       if (!token) {
-        return new ElysiaCustomStatusResponse("OK", "");
+        return new ElysiaCustomStatusResponse("Unauthorized", {
+          summary: "Missing token",
+        });
       }
 
       const { email } = await jwt.verify(token);
@@ -61,7 +63,7 @@ export const chatRoutes = new Elysia()
         });
       }
 
-      let chat = await prisma.chat.findUnique({
+      const chat = await prisma.chat.findFirst({
         where: { id: chatId, userId: user.id },
       });
       if (!chat) {
@@ -142,8 +144,8 @@ export const chatRoutes = new Elysia()
         });
       }
 
-      let chat = await prisma.chat.findUnique({
-        where: { id: chatId },
+      const chat = await prisma.chat.findFirst({
+        where: { id: chatId, userId: user.id },
       });
       if (!chat) {
         return new ElysiaCustomStatusResponse("Not Found", {
@@ -181,46 +183,65 @@ export const chatRoutes = new Elysia()
           getRecipesTool,
           getRecipeTool,
         },
+        stopWhen: stepCountIs(5),
         system: `
-        Je bent een culinaire assistent die uitsluitend gespecialiseerd is in recepten, kooktechnieken en voedselgerelateerde onderwerpen.
+        Je bent een recepten-assistent voor SVH Bakkerstalent.
 
-                ## Toepassingsgebied
-                Beantwoord alleen vragen over:
-                - Recepten en kookinstructies
-                - Ingrediënten, vervangingen en metingen
-                - Kooktechnieken en -methoden
-                - Keukenapparatuur en gereedschap
-                - Voedselopslag en veiligheid
-                - Voedingsbewerkingen (veganistisch, glutenvrij, enz.)
+        Je kan in alleen markdown opmaak weergeven.
 
-                ## Gedrag
-                - Als gevraagd wordt naar iets dat geen verband houdt met eten of koken, laat beleefd af en leidt u naar culinaire onderwerpen.
-                - Zorg altijd voor duidelijke, gestructureerde recepten met ingrediënten en stappen op verzoek.
-                - Bied nuttige tips, variaties en vervangingen waar relevant.
-                - Stel verduidelijkende vragen als een verzoek te vaag is (bijvoorbeeld keukentype, dieetbeperkingen, porties).
+        Je hebt toegang tot de volgende tools:
+        - getRecipesCategories(recipeTheme): Haal alle categorieën op voor een thema ("Banket" of "Brood")
+        - getRecipes(recipeTheme, recipeCategory): Haal alle recepten op voor een thema + categorie
+        - getRecipe(recipeName): Haal een enkel recept op via naam/slug
 
-                ## Opmaak
-                Bij het geven van een recept, structureer het altijd als:
-                1. Korte beschrijving
-                2. Porties & tijd (voorbereiding/kok/totaal)
-                3. Ingrediëntenlijst
-                4. Stapsgewijze instructies
-                5. Optioneel: tips, variaties of opslagadvies
+        Wanneer je receptnamen weergeeft, verwijder dan de prefix (zoals "BB-", "BB-Schuim-", "BB-Banket-")
+        en vervang koppeltekens door spaties. Kapitaliseer elk woord netjes.
 
-                Bespreek nooit onderwerpen buiten voedsel en koken in geen geval.
+        Wanneer je tools aanroept:
+        1. Roep de tool aan
+        2. Presenteer ALTIJD alle resultaten aan de gebruiker in een overzichtelijke lijst
+        3. Vraag daarna wat de gebruiker wil doen
+
+        Wanneer je recepten of categorieën weergeeft, gebruik dan altijd markdown opmaak:
+
+        - Gebruik **vetgedrukte** namen voor recepten
+        - Voeg een genummerde lijst toe
+        - Vermeld altijd de bron onderaan van de tool aanroep
+
+        Antwoord altijd in het Nederlands.
         `,
         prompt: aiMessages,
       });
 
-      stream.text.then(async (t) => {
-        await prisma.message.create({
-          data: {
-            content: t,
-            timestamp: new Date(),
-            chatId: chat.id,
-          },
+      Promise.resolve(stream.text)
+        .then(async (t) => {
+          if (!chat.topic) {
+            const chatHistory = aiMessages.map((c) => c.content.toString());
+            chatHistory.push(t);
+
+            const { text } = await generateText({
+              model: groq("qwen/qwen3-32b"),
+              prompt: `Genereer een onderwerp van deze conversatie: ${chatHistory}`,
+            });
+            1;
+
+            await prisma.chat.update({
+              where: { id: chat.id },
+              data: { topic: text },
+            });
+          }
+
+          await prisma.message.create({
+            data: {
+              content: t,
+              timestamp: new Date(),
+              chatId: chat.id,
+            },
+          });
+        })
+        .catch((err: unknown) => {
+          console.error("Failed to finalize streamed chat response:", err);
         });
-      });
 
       return stream.textStream;
     },
