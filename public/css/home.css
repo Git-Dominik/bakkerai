@@ -119,7 +119,8 @@
       background: var(--gold) !important;
       color: var(--white) !important;
       padding: 9px 20px;
-      transition: background .15s !important
+      transition: background .15s !important;
+      border: none;
   }
 
   .btn-register:hover {
