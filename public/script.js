@@ -15,6 +15,27 @@ let currentChat;
 let busy = false;
 let userScrolledUp = false;
 
+async function apiFetch(url, opts = {}) {
+  const res = await fetch(`${apiUrl}${url}`, {
+    credentials: "include",
+    ...opts,
+  });
+  if (res.status === 401) {
+    await fetch(`${apiUrl}/logout`, { method: "POST", credentials: "include" });
+  }
+  return res;
+}
+
+function addUserMessage(text) {
+  const container = document.createElement("div");
+  container.classList.add("user-message-container");
+  const el = document.createElement("p");
+  el.classList.add("user-message");
+  el.textContent = text;
+  container.append(el);
+  document.getElementById("lechonk").append(container);
+}
+
 window.useSuggestion = function (btn) {
   input.value = btn.textContent.trim();
   input.focus();
@@ -53,39 +74,22 @@ function scrollToBottom() {
   lechonk.scrollTop = lechonk.scrollHeight;
 }
 
-async function nukeToken() {
-  await fetch(`${apiUrl}/logout`, {
-    method: "POST",
-    credentials: "include",
-  });
-}
-
 async function getChats() {
   const chats = document.getElementById("chats");
   if (!chats) return;
 
-  let response;
-  try {
-    response = await fetch(`${apiUrl}/chats`, {
-      method: "GET",
-      credentials: "include",
-    });
-  } catch {
-    return;
-  }
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      nukeToken();
+  const response = await apiFetch("/chats").catch(() => null);
+  if (!response || !response.ok) {
+    if (response) {
+      const message = document.createElement("p");
+      try {
+        const error = JSON.parse(await response.text());
+        message.textContent = error.summary || "Error loading chats";
+      } catch {
+        message.textContent = "Error loading chats";
+      }
+      chats.append(message);
     }
-    const message = document.createElement("p");
-    try {
-      const error = JSON.parse(await response.text());
-      message.textContent = error.summary || "Error loading chats";
-    } catch {
-      message.textContent = "Error loading chats";
-    }
-    chats.append(message);
     return;
   }
 
@@ -135,28 +139,18 @@ async function getMessages(chatId) {
   const messages = document.getElementById("lechonk");
   if (!messages) return;
 
-  let response;
-  try {
-    response = await fetch(`${apiUrl}/chats/${chatId}/messages`, {
-      method: "GET",
-      credentials: "include",
-    });
-  } catch {
-    return;
-  }
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      nukeToken();
+  const response = await apiFetch(`/chats/${chatId}/messages`).catch(() => null);
+  if (!response || !response.ok) {
+    if (response) {
+      const message = document.createElement("p");
+      try {
+        const error = JSON.parse(await response.text());
+        message.textContent = error.summary || "Error loading messages";
+      } catch {
+        message.textContent = "Error loading messages";
+      }
+      messages.append(message);
     }
-    const message = document.createElement("p");
-    try {
-      const error = JSON.parse(await response.text());
-      message.textContent = error.summary || "Error loading messages";
-    } catch {
-      message.textContent = "Error loading messages";
-    }
-    messages.append(message);
     return;
   }
 
@@ -172,13 +166,7 @@ async function getMessages(chatId) {
   parsedMessages.data.forEach((msg) => {
     const isUser = msg.userId || msg.role === "user";
     if (isUser) {
-      const usrContainer = document.createElement("div");
-      usrContainer.classList.add("user-message-container");
-      const messageElement = document.createElement("p");
-      messageElement.classList.add("user-message");
-      messageElement.textContent = msg.content || "";
-      usrContainer.append(messageElement);
-      messages.append(usrContainer);
+      addUserMessage(msg.content || "");
     } else {
       const messageElement = document.createElement("p");
       messageElement.classList.add("ai-response");
@@ -195,23 +183,8 @@ async function getMessages(chatId) {
 }
 
 export async function createChat() {
-  let response;
-  try {
-    response = await fetch(`${apiUrl}/chats`, {
-      method: "POST",
-      credentials: "include",
-    });
-  } catch {
-    return;
-  }
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      nukeToken();
-    }
-    return;
-  }
-
+  const response = await apiFetch("/chats", { method: "POST" }).catch(() => null);
+  if (!response || !response.ok) return;
   return await response.text();
 }
 
@@ -244,31 +217,13 @@ export async function sendMessage() {
 
   if (!input) return;
 
-  let response;
-  try {
-    response = await fetch(`${apiUrl}/chats/${currentChat}/messages`, {
-      method: "POST",
-      body: messageText,
-      credentials: "include",
-    });
-  } catch {
-    busy = false;
-    return;
-  }
+  const response = await apiFetch(`/chats/${currentChat}/messages`, {
+    method: "POST",
+    body: messageText,
+  }).catch(() => null);
 
-  if (!response.ok || !response.body) {
-    if (response.status === 401) {
-      nukeToken();
-    }
-
-    const usrContainer = document.createElement("div");
-    usrContainer.classList.add("user-message-container");
-    const userMessage = document.createElement("p");
-    userMessage.classList.add("user-message");
-    userMessage.textContent = messageText;
-    usrContainer.append(userMessage);
-    messages.append(usrContainer);
-
+  if (!response || !response.ok || !response.body) {
+    if (response) addUserMessage(messageText);
     const error = document.createElement("p");
     error.classList.add("ai-response");
     error.textContent = "An error occurred";
@@ -277,13 +232,7 @@ export async function sendMessage() {
     return;
   }
 
-  const usrContainer = document.createElement("div");
-  usrContainer.classList.add("user-message-container");
-  const userMessage = document.createElement("p");
-  userMessage.classList.add("user-message");
-  userMessage.textContent = messageText;
-  usrContainer.append(userMessage);
-  messages.append(usrContainer);
+  addUserMessage(messageText);
 
   let message = document.createElement("p");
   message.classList.add("ai-response");
@@ -293,33 +242,121 @@ export async function sendMessage() {
 
   let fullText = "";
   let assistantReply = "";
-  let i = 0;
+  let renderedLen = 0;
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
 
-  function typeWriter() {
-    if (i < fullText.length) {
-      i++;
-      const parsed = parser.parse(fullText.slice(0, i));
-      message.innerHTML = renderer.render(parsed);
+  function showToolIndicator(type, name) {
+    if (type === "reasoning") {
+      let el = document.getElementById("reasoning-block");
+      if (!el) {
+        el = document.createElement("div");
+        el.id = "reasoning-block";
+        el.classList.add("reasoning-indicator", "loading");
+        el.innerHTML = `
+          <div class="spinner"></div>
+          <span class="reasoning-title">Aan het nadenken...</span>
+        `;
+        message.before(el);
+      }
       scrollToBottom();
-      setTimeout(typeWriter, speed);
-    } else {
-      busy = false;
-      document.getElementById("busy-warning")?.remove();
+      return;
+    }
+
+    if (type === "reasoning-done") {
+      document.getElementById("reasoning-block")?.remove();
+      scrollToBottom();
+      return;
+    }
+
+    if (type === "tool") {
+      let el = document.getElementById(`tool-${name}`);
+      if (!el) {
+        el = document.createElement("div");
+        el.id = `tool-${name}`;
+        el.classList.add("tool-indicator", "loading");
+        el.innerHTML = `
+          <div class="spinner"></div>
+          <span class="tool-name">${name.replace("Tool", "")}</span>
+        `;
+        message.before(el);
+      }
+      scrollToBottom();
+      return;
+    }
+
+    if (type === "tool-done") {
+      const el = document.getElementById(`tool-${name}`);
+      if (el) {
+        el.classList.remove("loading");
+        el.classList.add("done");
+      }
+      scrollToBottom();
     }
   }
+
+  let typing = false;
+
+  function typeWriter() {
+    if (typing) return;
+    typing = true;
+    function tick() {
+      if (renderedLen < fullText.length) {
+        renderedLen++;
+        const parsed = parser.parse(fullText.slice(0, renderedLen));
+        message.innerHTML = renderer.render(parsed);
+        scrollToBottom();
+        setTimeout(tick, speed);
+      } else {
+        typing = false;
+        busy = false;
+        document.getElementById("busy-warning")?.remove();
+      }
+    }
+    tick();
+  }
+
+  function handleChunk(chunk) {
+    switch (chunk.type) {
+      case "text-delta":
+        fullText += chunk.text;
+        assistantReply += chunk.text;
+        typeWriter();
+        break;
+      case "reasoning-start":
+        showToolIndicator("reasoning");
+        break;
+      case "reasoning-end":
+        showToolIndicator("reasoning-done");
+        break;
+      case "tool-call":
+        showToolIndicator("tool", chunk.toolName);
+        break;
+      case "tool-result":
+        showToolIndicator("tool-done", chunk.toolName);
+        break;
+    }
+  }
+
+  let buffer = "";
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
+    buffer += decoder.decode(value);
 
-    const chonk = decoder.decode(value);
-    fullText += chonk;
-    assistantReply += chonk;
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
 
-    if (i === fullText.length - chonk.length) typeWriter();
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try { handleChunk(JSON.parse(line)); } catch {}
+    }
+  }
+
+  if (buffer.trim()) {
+    try { handleChunk(JSON.parse(buffer)); } catch {}
   }
 
   showEmptyState();
