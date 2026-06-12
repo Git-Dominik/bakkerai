@@ -125,7 +125,7 @@ export const chatRoutes = new Elysia()
   )
   .post(
     "/chats/:chatId/messages",
-    async ({ params: { chatId }, body, cookie: { auth }, jwt }) => {
+    async ({ params: { chatId }, body, cookie: { auth }, jwt, request }) => {
       const token = auth?.value;
       if (!token) {
         return new ElysiaCustomStatusResponse("Unauthorized", {
@@ -177,7 +177,8 @@ export const chatRoutes = new Elysia()
         );
 
       const stream = streamText({
-        model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
+        model: groq("qwen/qwen3-32b"),
+        abortSignal: request.signal,
         tools: {
           getRecipesCategoriesTool,
           getRecipesTool,
@@ -187,63 +188,87 @@ export const chatRoutes = new Elysia()
         system: `
         Je bent een recepten-assistent voor SVH Bakkerstalent.
 
-        Je kan in alleen markdown opmaak weergeven.
+        BELANGRIJK: Je hebt GEEN kennis van recepten, categorieën of thema's uit jezelf.
+        Je MOET altijd de tools gebruiken om informatie op te halen. Geef NOOIT een antwoord
+        op basis van aannames of training data over recepten.
 
-        Je hebt toegang tot de volgende tools:
-        - getRecipesCategories(recipeTheme): Haal alle categorieën op voor een thema ("Banket" of "Brood")
-        - getRecipes(recipeTheme, recipeCategory): Haal alle recepten op voor een thema + categorie
-        - getRecipe(recipeName): Haal een enkel recept op via naam/slug
+        Werkwijze:
+        1. Gebruiker vraagt om recepten of categorieën → roep DIRECT de tool aan, geen uitleg vooraf
+        2. Weet je de slug niet? → roep getRecipesTool aan eerst
+        3. Presenteer de resultaten van de tool
+        4. Vraag wat de gebruiker wil doen
 
-        Wanneer je receptnamen weergeeft, verwijder dan de prefix (zoals "BB-", "BB-Schuim-", "BB-Banket-")
-        en vervang koppeltekens door spaties. Kapitaliseer elk woord netjes.
+        Tools:
+        - getRecipesCategoriesTool(recipeTheme): categorieën voor "Banket" of "Brood"
+        - getRecipesTool(recipeTheme, recipeCategory): geeft slugs terug (bijv. "BB-Kleinbrood-Abrikozenbolletjes")
+        - getRecipeTool(recipeName): één recept via slug — gebruik ALTIJD de slug van getRecipesTool, NOOIT een display naam
 
-        Wanneer je tools aanroept:
-        1. Roep de tool aan
-        2. Presenteer ALTIJD alle resultaten aan de gebruiker in een overzichtelijke lijst
-        3. Vraag daarna wat de gebruiker wil doen
+        Wanneer je een recept weergeeft, gebruik ALTIJD dit formaat:
 
-        Wanneer je recepten of categorieën weergeeft, gebruik dan altijd markdown opmaak:
+        ## [emoji] [Receptnaam]
 
-        - Gebruik **vetgedrukte** namen voor recepten
-        - Voeg een genummerde lijst toe
-        - Vermeld altijd de bron onderaan van de tool aanroep
+        ### 🧁 Ingrediënten
+        - **[Groepnaam]**: [hoeveelheid]
 
-        Antwoord altijd in het Nederlands.
+        ### 🔤 Werkwijze
+        1. **[Stap]** beschrijving.
+
+        ### 📸 Foto
+        ![Receptnaam](imageUrl)
+
+        Regels voor het formaat:
+        - Verwijder prefixes zoals "BB-", "BB-Schuim-" uit de weergavenaam maar behoud de slug tussen haakjes
+        - Groepeer ingrediënten logisch per onderdeel van het recept
+        - Gebruik altijd vette tekst voor de eerste twee woorden van elke stap
+        - Toon de foto alleen als imageUrl beschikbaar is
+
+        Antwoord altijd in het Nederlands. Gebruik alleen markdown opmaak.
         `,
         prompt: aiMessages,
-      });
-
-      Promise.resolve(stream.text)
-        .then(async (t) => {
+        onFinish: async ({ text }) => {
           if (!chat.topic) {
             const chatHistory = aiMessages.map((c) => c.content.toString());
-            chatHistory.push(t);
-
-            const { text } = await generateText({
-              model: groq("qwen/qwen3-32b"),
-              prompt: `Genereer een onderwerp van deze conversatie: ${chatHistory}`,
+            chatHistory.push(text);
+            const { text: topic } = await generateText({
+              model: groq("groq/compound-mini"),
+              prompt: `Genereer een onderwerp van deze conversatie (1 zin, 6 woorden max): ${chatHistory}`,
             });
-            1;
-
             await prisma.chat.update({
               where: { id: chat.id },
-              data: { topic: text },
+              data: { topic },
             });
           }
-
           await prisma.message.create({
             data: {
-              content: t,
+              content: text,
               timestamp: new Date(),
               chatId: chat.id,
             },
           });
-        })
-        .catch((err: unknown) => {
-          console.error("Failed to finalize streamed chat response:", err);
-        });
+        },
+      });
 
-      return stream.textStream;
+      const readable = new ReadableStream({
+        async start(controller) {
+          const encoder = new TextEncoder();
+          try {
+            for await (const chunk of stream.fullStream) {
+              controller.enqueue(encoder.encode(JSON.stringify(chunk) + "\n"));
+            }
+          } catch (e) {
+            if ((e as any).name === "AbortError") return;
+            console.error("stream error:", e);
+          } finally {
+            try {
+              controller.close();
+            } catch {}
+          }
+        },
+      });
+
+      return new Response(readable, {
+        headers: { "Content-Type": "application/x-ndjson" },
+      });
     },
     {
       cookie: t.Cookie({
