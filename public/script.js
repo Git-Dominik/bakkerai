@@ -104,7 +104,7 @@ async function getChats() {
 
   parsedChats.forEach((chat) => {
     const chatElement = document.createElement("button");
-    chatElement.textContent = `Chat ${chat.id}`;
+    chatElement.textContent = chat.topic ?? `Chat ${chat.id}`;
     chatElement.classList.add("chatButton");
     chatElement.addEventListener("click", () => {
       if (chat.id === currentChat) return;
@@ -139,7 +139,9 @@ async function getMessages(chatId) {
   const messages = document.getElementById("lechonk");
   if (!messages) return;
 
-  const response = await apiFetch(`/chats/${chatId}/messages`).catch(() => null);
+  const response = await apiFetch(`/chats/${chatId}/messages`).catch(
+    () => null,
+  );
   if (!response || !response.ok) {
     if (response) {
       const message = document.createElement("p");
@@ -183,7 +185,9 @@ async function getMessages(chatId) {
 }
 
 export async function createChat() {
-  const response = await apiFetch("/chats", { method: "POST" }).catch(() => null);
+  const response = await apiFetch("/chats", { method: "POST" }).catch(
+    () => null,
+  );
   if (!response || !response.ok) return;
   return await response.text();
 }
@@ -336,27 +340,42 @@ export async function sendMessage() {
       case "tool-result":
         showToolIndicator("tool-done", chunk.toolName);
         break;
+      default:
+        console.error("unknown chunk type:", chunk.type);
+        break;
     }
   }
 
   let buffer = "";
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value);
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value);
 
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
 
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      try { handleChunk(JSON.parse(line)); } catch {}
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          handleChunk(JSON.parse(line));
+        } catch {
+          console.error("chunk parse error:", line);
+        }
+      }
     }
+  } catch (e) {
+    if (e?.name !== "AbortError") console.error("stream read error:", e);
   }
 
   if (buffer.trim()) {
-    try { handleChunk(JSON.parse(buffer)); } catch {}
+    try {
+      handleChunk(JSON.parse(buffer));
+    } catch {
+      console.error("chunk parse error:", buffer);
+    }
   }
 
   showEmptyState();

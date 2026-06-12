@@ -231,7 +231,7 @@ export const chatRoutes = new Elysia()
             chatHistory.push(text);
             const { text: topic } = await generateText({
               model: groq("groq/compound-mini"),
-              prompt: `Genereer een onderwerp van deze conversatie (1 zin, 6 woorden max): ${chatHistory}`,
+              prompt: `Genereer een onderwerp van deze conversatie (max 29 chars): ${chatHistory}`,
             });
             await prisma.chat.update({
               where: { id: chat.id },
@@ -253,6 +253,7 @@ export const chatRoutes = new Elysia()
           const encoder = new TextEncoder();
           try {
             for await (const chunk of stream.fullStream) {
+              if (request.signal.aborted) break;
               controller.enqueue(encoder.encode(JSON.stringify(chunk) + "\n"));
             }
           } catch (e) {
