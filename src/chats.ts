@@ -1,7 +1,7 @@
 import { Elysia, t, ElysiaCustomStatusResponse } from "elysia";
 import { generateText, modelMessageSchema, stepCountIs, streamText } from "ai";
 import jwt from "@elysiajs/jwt";
-import { prisma, groq } from "./db";
+import { prisma, openrouter } from "./db";
 import {
   getRecipesCategoriesTool,
   getRecipesTool,
@@ -176,17 +176,18 @@ export const chatRoutes = new Elysia()
           }),
         );
 
-      const stream = streamText({
-        model: groq("qwen/qwen3-32b"),
-        abortSignal: request.signal,
-        tools: {
-          getRecipesCategoriesTool,
-          getRecipesTool,
-          getRecipeTool,
-        },
-        stopWhen: stepCountIs(5),
-        system: `
-        Je bent een recepten-assistent voor SVH Bakkerstalent.
+      const textStream = () =>
+        streamText({
+          model: openrouter("google/gemma-4-31b-it:free"),
+          abortSignal: request.signal,
+          tools: {
+            getRecipesCategoriesTool,
+            getRecipesTool,
+            getRecipeTool,
+          },
+          stopWhen: stepCountIs(10),
+          system: `
+        Je bent een recepten-assistent voor Talland leerlingen aan de bakker opleiding. Voor recepten gebruik je altijd de SVH website.
 
         BELANGRIJK: Je hebt GEEN kennis van recepten, categorieën of thema's uit jezelf.
         Je MOET altijd de tools gebruiken om informatie op te halen. Geef NOOIT een antwoord
@@ -224,46 +225,65 @@ export const chatRoutes = new Elysia()
 
         Antwoord altijd in het Nederlands. Gebruik alleen markdown opmaak.
         `,
-        prompt: aiMessages,
-        onFinish: async ({ text }) => {
-          if (!chat.topic) {
-            const chatHistory = aiMessages.map((c) => c.content.toString());
-            chatHistory.push(text);
-            const { text: topic } = await generateText({
-              model: groq("groq/compound-mini"),
-              prompt: `Genereer een onderwerp van deze conversatie (max 29 chars): ${chatHistory}`,
+          prompt: aiMessages,
+          onAbort: async ({ steps }) => {
+            console.log("streamText aborted, finishedSteps:", steps);
+          },
+          onError: async ({ error }) => {
+            console.error("streamText error:", error);
+          },
+          onFinish: async ({ text }) => {
+            if (!chat.topic) {
+              const chatHistory = aiMessages.map((c) => c.content.toString());
+              chatHistory.push(text);
+
+              const { text: topic } = await generateText({
+                model: openrouter("google/gemma-4-26b-a4b:free"),
+                prompt: `Genereer een onderwerp van deze conversatie (max 29 chars): ${chatHistory}`,
+              });
+              await prisma.chat.update({
+                where: { id: chat.id },
+                data: { topic },
+              });
+            }
+            await prisma.message.create({
+              data: {
+                content: text,
+                timestamp: new Date(),
+                chatId: chat.id,
+              },
             });
-            await prisma.chat.update({
-              where: { id: chat.id },
-              data: { topic },
-            });
-          }
-          await prisma.message.create({
-            data: {
-              content: text,
-              timestamp: new Date(),
-              chatId: chat.id,
-            },
-          });
-        },
-      });
+          },
+        });
 
       const readable = new ReadableStream({
         async start(controller) {
           const encoder = new TextEncoder();
-          try {
-            for await (const chunk of stream.fullStream) {
-              if (request.signal.aborted) break;
-              controller.enqueue(encoder.encode(JSON.stringify(chunk) + "\n"));
-            }
-          } catch (e) {
-            if ((e as any).name === "AbortError") return;
-            console.error("stream error:", e);
-          } finally {
+          let attempts = 3;
+
+          while (attempts-- > 0) {
             try {
-              controller.close();
-            } catch {}
+              const stream = textStream();
+              for await (const chunk of stream.fullStream) {
+                if (request.signal.aborted) return;
+                controller.enqueue(
+                  encoder.encode(JSON.stringify(chunk) + "\n"),
+                );
+              }
+              break;
+            } catch (e: any) {
+              if (e.name === "AbortError") return;
+              if (attempts === 0) {
+                console.error("stream error:", e);
+                break;
+              }
+              await new Promise((r) => setTimeout(r, 1000));
+            }
           }
+
+          try {
+            controller.close();
+          } catch {}
         },
       });
 
