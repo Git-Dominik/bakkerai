@@ -1,5 +1,6 @@
 import { PrismaClient } from "../generated/prisma/client";
 import { PrismaBunSqlite } from "prisma-adapter-bun-sqlite";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createGroq } from "@ai-sdk/groq";
 
 const adapter = new PrismaBunSqlite({ url: `${process.env.DATABASE_URL}` });
@@ -12,4 +13,7 @@ await prisma.$connect().catch((e) => {
 
 export const groq = createGroq({
   apiKey: Bun.env.lekey,
+});
+export const openrouter = createOpenRouter({
+  apiKey: Bun.env.OPENROUTER_API_KEY,
 });

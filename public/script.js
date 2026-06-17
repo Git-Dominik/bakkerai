@@ -253,6 +253,7 @@ export async function sendMessage() {
 
   function showToolIndicator(type, name) {
     if (type === "reasoning") {
+      clearTimeout(reasoningTimeout);
       let el = document.getElementById("reasoning-block");
       if (!el) {
         el = document.createElement("div");
@@ -269,8 +270,11 @@ export async function sendMessage() {
     }
 
     if (type === "reasoning-done") {
-      document.getElementById("reasoning-block")?.remove();
-      scrollToBottom();
+      clearTimeout(reasoningTimeout);
+      reasoningTimeout = setTimeout(() => {
+        document.getElementById("reasoning-block")?.remove();
+        scrollToBottom();
+      }, 500);
       return;
     }
 
@@ -282,7 +286,7 @@ export async function sendMessage() {
         el.classList.add("tool-indicator", "loading");
         el.innerHTML = `
           <div class="spinner"></div>
-          <span class="tool-name">${name.replace("Tool", "")}</span>
+          <span class="tool-name">${{ getRecipesCategoriesTool: "Categorieën ophalen", getRecipesTool: "Recepten zoeken", getRecipeTool: "Recept ophalen" }[name] || name}</span>
         `;
         message.before(el);
       }
@@ -300,6 +304,7 @@ export async function sendMessage() {
     }
   }
 
+  let reasoningTimeout = null;
   let typing = false;
 
   function typeWriter() {
@@ -321,9 +326,19 @@ export async function sendMessage() {
     tick();
   }
 
+  function hideReasoning() {
+    clearTimeout(reasoningTimeout);
+    document.getElementById("reasoning-block")?.remove();
+  }
+
   function handleChunk(chunk) {
+    console.log(chunk);
     switch (chunk.type) {
+      case "start":
+        showToolIndicator("reasoning");
+        break;
       case "text-delta":
+        hideReasoning();
         fullText += chunk.text;
         assistantReply += chunk.text;
         typeWriter();
@@ -334,6 +349,11 @@ export async function sendMessage() {
       case "reasoning-end":
         showToolIndicator("reasoning-done");
         break;
+      case "start-step":
+      case "error":
+      case "finish":
+        hideReasoning();
+        break;
       case "tool-call":
         showToolIndicator("tool", chunk.toolName);
         break;
@@ -341,7 +361,7 @@ export async function sendMessage() {
         showToolIndicator("tool-done", chunk.toolName);
         break;
       default:
-        console.error("unknown chunk type:", chunk.type);
+        console.warn("unknown chunk type:", chunk.type);
         break;
     }
   }

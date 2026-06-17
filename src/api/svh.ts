@@ -58,10 +58,14 @@ export const getRecipesTool = tool({
 
 export const getRecipeTool = tool({
   description:
-    "Get a single recipe by its slug (as returned by getRecipesTool, e.g. 'BB-Kleinbrood-Abrikozenbolletjes'). Do not pass display names.",
+    "Get a single recipe by its slug (as returned by getRecipesTool, do not pass display names only slugs.",
+  inputExamples: [
+    { input: { recipeName: "BB-Kleinbrood-Abrikozenbolletjes" } },
+  ],
   inputSchema: z.object({
     recipeName: z
       .string()
+      .regex(/^\S+$/, "Slug must not contain spaces")
       .describe("The recipe slug as returned by getRecipesTool"),
   }),
   execute: ({ recipeName }) => getRecipe(recipeName),
