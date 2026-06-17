@@ -3,9 +3,253 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/nav.css">
+    <link rel="stylesheet" href="/admin_css/admin.css">
 </head>
 <body>
-    
+    <nav>
+        <div class="nav-inner">
+            <a href="/" class="nav-logo" aria-label="Home">
+                <svg viewBox="0 0 450 80" xmlns="http://www.w3.org/2000/svg" fill="#111">
+                    <path d="m19.3209 12.9104h-19.3209v-12.9104h53.6279v12.9104h-19.3209v54.7969h-14.9861zm17.1614 40.0709c0-9.9459 6.7854-15.8749 22.3376-17.5018l10.6491-1.1468v-.6688c0-5.451-3.7707-8.5119-9.4239-8.5119-5.184 0-9.0478 2.9645-9.6139 8.3191h-13.9489c1.2253-11.2856 10.8392-19.5083 23.7508-19.5083 13.8539 0 23.8459 7.3631 23.8459 21.4223v32.3242h-14.608v-5.9289c-2.4505 4.2077-8.1987 6.6942-14.703 6.6942-11.2153 0-18.2837-6.1198-18.2837-15.4933zm21.3004 4.4949c6.8803 0 11.4033-4.8765 11.6863-12.5288l-10.3681 1.1469c-5.5601.5744-8.0106 2.9645-8.0106 6.2162 0 3.0609 2.6385 5.1637 6.6924 5.1637zm29.594-57.4762h14.6083v67.7073h-14.6083zm18.0003 0h14.608v67.7073h-14.608zm16.786 52.9813c0-9.9459 6.785-15.8749 22.337-17.5018l10.649-1.1468v-.6688c0-5.451-3.77-8.5119-9.424-8.5119-5.184 0-9.047 2.9645-9.614 8.3191h-13.948c1.225-11.2856 10.839-19.5083 23.75-19.5083 13.854 0 23.846 7.3631 23.846 21.4223v32.3242h-14.608v-5.9289c-2.45 4.2077-8.198 6.6942-14.703 6.6942-11.215 0-18.283-6.1198-18.283-15.4933zm21.3 4.4949c6.88 0 11.403-4.8765 11.686-12.5288l-10.368 1.1469c-5.56.5744-8.01 2.9645-8.01 6.2162 0 3.0609 2.638 5.1637 6.692 5.1637zm29.388-42.7481h14.608v6.2162c2.546-3.539 8.765-6.9815 16.211-6.9815 11.404 0 19.416 7.6503 19.416 19.0302v34.7143h-14.515v-30.7937c0-5.929-3.392-9.946-9.236-9.946-7.163 0-11.874 5.6418-11.874 17.0218v23.7179h-14.608v-52.9792zm52.205 26.4896c0-16.7365 10.178-27.2549 24.976-27.2549 6.502 0 12.252 2.4865 15.362 6.5978v-20.5606h14.608v67.7073h-14.608v-5.8325c-3.11 4.1113-8.672 6.5978-15.174 6.5978-14.986 0-25.164-10.5204-25.164-27.2549zm27.521 14.6317c7.635 0 12.819-5.8346 12.819-14.6317s-5.184-14.7281-12.819-14.7281c-7.634 0-12.818 5.929-12.818 14.7281s5.184 14.6317 12.818 14.6317z" />
+                </svg>
+            </a>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/chat" class="nav-link">Chat</a>
+            </div>
+            <div class="nav-right">
+                <a href="/login" id="loginLink">Inloggen</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <h1 class="page-title">Admin Dashboard</h1>
+        <button id="backBtn" class="back-btn" hidden onclick="goBack()">Back</button>
+    </div>
+
+    <main id="content">
+        <div id="loading" class="loading" hidden>Loading...</div>
+        <div id="error" class="error" hidden></div>
+
+        <div id="usersView" hidden>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Chats</th>
+                        <th>Messages</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+            </table>
+        </div>
+
+        <div id="userDetailView" hidden>
+            <div class="user-header">
+                <h2 id="userDetailName"></h2>
+                <p id="userDetailEmail"></p>
+                <p class="stat">Total messages: <span id="userDetailMessages"></span></p>
+            </div>
+            <h3>Chats</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Topic</th>
+                        <th>Messages</th>
+                    </tr>
+                </thead>
+                <tbody id="chatsTableBody"></tbody>
+            </table>
+        </div>
+
+        <div id="chatDetailView" hidden>
+            <div class="chat-header">
+                <h2 id="chatDetailTopic"></h2>
+                <p id="chatDetailUser"></p>
+            </div>
+            <div id="messagesContainer" class="messages-container"></div>
+        </div>
+    </main>
+
+    <script>
+        const views = ["usersView", "userDetailView", "chatDetailView"];
+        let viewStack = ["usersView"];
+
+        function showView(viewId) {
+            views.forEach(v => {
+                document.getElementById(v).hidden = v !== viewId;
+            });
+            document.getElementById("backBtn").hidden = viewStack.length <= 1;
+        }
+
+        function goBack() {
+            viewStack.pop();
+            showView(viewStack[viewStack.length - 1]);
+            if (viewStack[viewStack.length - 1] === "usersView") {
+                loadUsers();
+            }
+        }
+
+        function setLoading(loading) {
+            document.getElementById("loading").hidden = !loading;
+        }
+
+        function showError(msg) {
+            const errorEl = document.getElementById("error");
+            if (msg) {
+                errorEl.textContent = msg;
+                errorEl.hidden = false;
+            } else {
+                errorEl.hidden = true;
+            }
+        }
+
+        async function fetchAdmin(path) {
+            const res = await fetch(path);
+            if (res.status === 401 || res.status === 403) {
+                const body = await res.text();
+                showError(`Unauthorized - ${body}`);
+                return null;
+            }
+            if (!res.ok) {
+                const body = await res.text();
+                showError(`Error ${res.status}: ${body}`);
+                return null;
+            }
+            return res.json();
+        }
+
+        async function loadUsers() {
+            setLoading(true);
+            showError(null);
+            showView("usersView");
+
+            const users = await fetchAdmin("/api/admin/users");
+            setLoading(false);
+            if (!users) return;
+
+            const tbody = document.getElementById("usersTableBody");
+            tbody.innerHTML = "";
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5">No users found</td></tr>';
+                return;
+            }
+
+            users.forEach(user => {
+                const tr = document.createElement("tr");
+                tr.className = "clickable-row";
+                tr.onclick = () => loadUserDetail(user.id);
+                tr.innerHTML = `
+                    <td>${user.id}</td>
+                    <td>${escapeHtml(user.name)}</td>
+                    <td>${escapeHtml(user.email)}</td>
+                    <td>${user.chatCount}</td>
+                    <td>${user.messageCount}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function loadUserDetail(userId) {
+            setLoading(true);
+            showError(null);
+
+            const user = await fetchAdmin(`/api/admin/users/${userId}`);
+            setLoading(false);
+            if (!user) return;
+
+            viewStack.push("userDetailView");
+            showView("userDetailView");
+
+            document.getElementById("userDetailName").textContent = user.name;
+            document.getElementById("userDetailEmail").textContent = user.email;
+            document.getElementById("userDetailMessages").textContent = user.messageCount;
+
+            const tbody = document.getElementById("chatsTableBody");
+            tbody.innerHTML = "";
+
+            if (user.chats.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3">No chats found</td></tr>';
+                return;
+            }
+
+            user.chats.forEach(chat => {
+                const tr = document.createElement("tr");
+                tr.className = "clickable-row";
+                tr.onclick = () => loadChatDetail(chat.id);
+                tr.innerHTML = `
+                    <td>${chat.id}</td>
+                    <td>${escapeHtml(chat.topic)}</td>
+                    <td>${chat.messageCount}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function loadChatDetail(chatId) {
+            setLoading(true);
+            showError(null);
+
+            const chat = await fetchAdmin(`/api/admin/chats/${chatId}/messages`);
+            setLoading(false);
+            if (!chat) return;
+
+            viewStack.push("chatDetailView");
+            showView("chatDetailView");
+
+            document.getElementById("chatDetailTopic").textContent = chat.topic;
+            document.getElementById("chatDetailUser").textContent =
+                `User: ${escapeHtml(chat.user.name)} (${escapeHtml(chat.user.email)})`;
+
+            const container = document.getElementById("messagesContainer");
+            container.innerHTML = "";
+
+            if (chat.messages.length === 0) {
+                container.innerHTML = '<p class="no-messages">No messages in this chat</p>';
+                return;
+            }
+
+            chat.messages.forEach(msg => {
+                const div = document.createElement("div");
+                div.className = `message ${msg.role}`;
+                div.innerHTML = `
+                    <div class="message-header">
+                        <span class="role-badge">${msg.role}</span>
+                        <span class="timestamp">${formatTimestamp(msg.timestamp)}</span>
+                    </div>
+                    <div class="message-content">${formatMessageContent(msg.content)}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement("div");
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function formatTimestamp(ts) {
+            return new Date(ts).toLocaleString();
+        }
+
+        function formatMessageContent(content) {
+            const escaped = escapeHtml(content);
+            return escaped
+                .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                .replace(/\*(.*?)\*/g, "<em>$1</em>")
+                .replace(/\n/g, "<br>");
+        }
+
+        document.addEventListener("DOMContentLoaded", loadUsers);
+    </script>
 </body>
 </html>

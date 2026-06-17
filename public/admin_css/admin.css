@@ -1,0 +1,255 @@
+body {
+  background: var(--grey-bg);
+  font-size: 15px;
+}
+
+.page-header {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 32px 40px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.page-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  color: var(--black);
+}
+
+.back-btn {
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  background: var(--gold);
+  color: var(--white);
+  border: none;
+  padding: 9px 20px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background .15s;
+  white-space: nowrap;
+}
+
+.back-btn:hover {
+  background: #9a7622;
+}
+
+main {
+  max-width: var(--max);
+  margin: 24px auto 64px;
+  padding: 0 40px;
+}
+
+.loading {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--grey-text);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.error {
+  background: #fff0f0;
+  color: #c00;
+  padding: 14px 18px;
+  border-radius: 3px;
+  margin-bottom: 20px;
+  border: 1px solid #fdd;
+  font-size: 14px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--white);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--grey-light);
+}
+
+.data-table thead {
+  background: var(--grey-bg);
+}
+
+.data-table th {
+  padding: 14px 18px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--grey-text);
+  border-bottom: 1px solid var(--grey-light);
+}
+
+.data-table td {
+  padding: 14px 18px;
+  font-size: 14px;
+  color: var(--black);
+  border-bottom: 1px solid var(--grey-light);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.clickable-row {
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.clickable-row:hover {
+  background: var(--gold-light);
+}
+
+.user-header, .chat-header {
+  background: var(--white);
+  padding: 28px 32px;
+  border-radius: 4px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--grey-light);
+}
+
+.user-header h2, .chat-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--black);
+  margin-bottom: 4px;
+  letter-spacing: -.02em;
+}
+
+.user-header p, .chat-header p {
+  font-size: 14px;
+  color: var(--grey-text);
+}
+
+.user-header .stat {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--grey-text);
+  font-weight: 400;
+}
+
+.user-header .stat span {
+  font-weight: 700;
+  color: var(--black);
+}
+
+h3 {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--grey-text);
+  margin-bottom: 14px;
+}
+
+.messages-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.message {
+  background: var(--white);
+  padding: 20px 24px;
+  border-radius: 4px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--grey-light);
+}
+
+.message.user {
+  border-left: 4px solid var(--gold);
+}
+
+.message.assistant {
+  border-left: 4px solid var(--teal);
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.role-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 2px;
+}
+
+.message.user .role-badge {
+  background: var(--gold-light);
+  color: var(--gold);
+}
+
+.message.assistant .role-badge {
+  background: #e0eeeb;
+  color: var(--teal);
+}
+
+.timestamp {
+  font-size: 12px;
+  color: var(--grey-text);
+  font-weight: 400;
+}
+
+.message-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 14px;
+  line-height: 1.7;
+  font-weight: 300;
+}
+
+.no-messages {
+  text-align: center;
+  color: var(--grey-text);
+  padding: 40px 24px;
+  background: var(--white);
+  border-radius: 4px;
+  border: 1px solid var(--grey-light);
+}
+
+@media (max-width: 720px) {
+  .page-header {
+    padding: 24px 20px 0;
+    flex-wrap: wrap;
+  }
+
+  main {
+    padding: 0 20px;
+    margin: 20px auto 48px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 10px 12px;
+  }
+
+  .user-header, .chat-header {
+    padding: 20px;
+  }
+
+  .message {
+    padding: 16px 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
