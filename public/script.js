@@ -5,6 +5,15 @@ const renderer = new HtmlRenderer();
 const messageHistory = [];
 const speed = 5;
 
+const toolLabels = {
+  getRecipesCategoriesTool: "Categorieën ophalen",
+  getRecipesTool: "Recepten zoeken",
+  getRecipeTool: "Recept ophalen",
+  getLessonTopicsTool: "Les onderwerp zoeken",
+  getLessonItemsTool: "Les zoeken",
+  getLessonPageTool: "Les ophalen",
+};
+
 const apiUrl = `${window.location.origin}/api`;
 
 const input = document.getElementById("input");
@@ -15,13 +24,18 @@ let currentChat;
 let busy = false;
 let userScrolledUp = false;
 
+window.logout = async function () {
+  await fetch(`${apiUrl}/logout`, { method: "POST", credentials: "include" });
+  window.location.href = "/";
+};
+
 async function apiFetch(url, opts = {}) {
   const res = await fetch(`${apiUrl}${url}`, {
     credentials: "include",
     ...opts,
   });
   if (res.status === 401) {
-    await fetch(`${apiUrl}/logout`, { method: "POST", credentials: "include" });
+    window.logout();
   }
   return res;
 }
@@ -286,7 +300,7 @@ export async function sendMessage() {
         el.classList.add("tool-indicator", "loading");
         el.innerHTML = `
           <div class="spinner"></div>
-          <span class="tool-name">${{ getRecipesCategoriesTool: "Categorieën ophalen", getRecipesTool: "Recepten zoeken", getRecipeTool: "Recept ophalen" }[name] || name}</span>
+           <span class="tool-name">${toolLabels[name] || name}</span>
         `;
         message.before(el);
       }
@@ -398,6 +412,8 @@ export async function sendMessage() {
     }
   }
 
+  busy = false;
+  document.getElementById("busy-warning")?.remove();
   showEmptyState();
   messageHistory.push({ role: "assistant", content: assistantReply });
 }

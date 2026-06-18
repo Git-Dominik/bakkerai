@@ -12,20 +12,13 @@ export const compRoutes = new Elysia()
       return loggedIn
         ? `
           <div class="nav-right">
-            <button
-              hx-post="/api/logout"
-              hx-redirect="/login"
-              class="btn-register"
-              hx-swap="none"
-            >
-              Logout
-            </button>
+            <a class="loginLink" onclick="logout()">Uitloggen</a>
           </div>
         `
         : `
           <div class="nav-right">
-            <a href="/login">Inloggen</a>
-            <a href="/register" class="btn-register">Registreren</a>
+            <a class="loginLink" href="/login">Inloggen</a>
+            <a class="loginLink" href="/register">Registreren</a>
           </div>
         `;
     },
