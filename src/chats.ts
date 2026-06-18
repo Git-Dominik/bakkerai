@@ -1,8 +1,11 @@
 import { Elysia, t, ElysiaCustomStatusResponse } from "elysia";
 import { generateText, modelMessageSchema, stepCountIs, streamText } from "ai";
 import jwt from "@elysiajs/jwt";
-import { prisma, openrouter } from "./db";
+import { prisma, openrouter, groq } from "./db";
 import {
+  getLessonTopicsTool,
+  getLessonItemsTool,
+  getLessonPageTool,
   getRecipesCategoriesTool,
   getRecipesTool,
   getRecipeTool,
@@ -176,76 +179,90 @@ export const chatRoutes = new Elysia()
           }),
         );
 
-      const textStream = () =>
+      const streamAbort = new AbortController();
+      request.signal.addEventListener("abort", () => {
+        console.log(
+          "[request] signal aborted, reason:",
+          request.signal.reason,
+          "streamAbort already aborted:",
+          streamAbort.signal.aborted,
+        );
+        streamAbort.abort();
+      });
+
+      const textStream = (abortSignal: AbortSignal) =>
         streamText({
-          model: openrouter("google/gemma-4-31b-it:free"),
-          abortSignal: request.signal,
+          model: groq("qwen/qwen3.6-27b"),
+          abortSignal,
           tools: {
             getRecipesCategoriesTool,
             getRecipesTool,
             getRecipeTool,
+            getLessonTopicsTool,
+            getLessonItemsTool,
+            getLessonPageTool,
           },
           stopWhen: stepCountIs(10),
           system: `
-        Je bent een recepten-assistent voor Talland leerlingen aan de bakker opleiding. Voor recepten gebruik je altijd de SVH website.
+          Je bent een leer-assistent voor Talland bakkerij leerlingen. Je haalt ALTIJD informatie op via tools — gebruik NOOIT je eigen kennis.
 
-        BELANGRIJK: Je hebt GEEN kennis van recepten, categorieën of thema's uit jezelf.
-        Je MOET altijd de tools gebruiken om informatie op te halen. Geef NOOIT een antwoord
-        op basis van aannames of training data over recepten.
+          REGELS:
+          - Gebruik tools direct, zonder te vragen om bevestiging
+          - Noem nooit tool namen aan de gebruiker
+          - Antwoord alleen op basis van tool output, nooit op basis van training data
 
-        Werkwijze:
-        1. Gebruiker vraagt om recepten of categorieën → roep DIRECT de tool aan, geen uitleg vooraf
-        2. Weet je de slug niet? → roep getRecipesTool aan eerst
-        3. Presenteer de resultaten van de tool
-        4. Vraag wat de gebruiker wil doen
+          Leerlijn: getLessonTopicsTool → getLessonItemsTool per topic → getLessonPageTool per item → alle pagina's ophalen als pagesAvailable > 1
+          Recepten: getRecipesCategoriesTool of getRecipesTool → getRecipeTool met slug (nooit display naam)
 
-        Tools:
-        - getRecipesCategoriesTool(recipeTheme): categorieën voor "Banket" of "Brood"
-        - getRecipesTool(recipeTheme, recipeCategory): geeft slugs terug (bijv. "BB-Kleinbrood-Abrikozenbolletjes")
-        - getRecipeTool(recipeName): één recept via slug — gebruik ALTIJD de slug van getRecipesTool, NOOIT een display naam
+          Recept formaat:
+          ## [emoji] [Naam]
+          ### 🧁 Ingrediënten
+          - **[Groep]**: [hoeveelheid]
+          ### 🔤 Werkwijze
+          1. **[Eerste twee woorden]** beschrijving.
+          ### 📸 Foto
+          ![Naam](imageUrl) — alleen tonen als beschikbaar
 
-        Wanneer je een recept weergeeft, gebruik ALTIJD dit formaat:
-
-        ## [emoji] [Receptnaam]
-
-        ### 🧁 Ingrediënten
-        - **[Groepnaam]**: [hoeveelheid]
-
-        ### 🔤 Werkwijze
-        1. **[Stap]** beschrijving.
-
-        ### 📸 Foto
-        ![Receptnaam](imageUrl)
-
-        Regels voor het formaat:
-        - Verwijder prefixes zoals "BB-", "BB-Schuim-" uit de weergavenaam maar behoud de slug tussen haakjes
-        - Groepeer ingrediënten logisch per onderdeel van het recept
-        - Gebruik altijd vette tekst voor de eerste twee woorden van elke stap
-        - Toon de foto alleen als imageUrl beschikbaar is
-
-        Antwoord altijd in het Nederlands. Gebruik alleen markdown opmaak.
+          Antwoord in het Nederlands, alleen markdown.
         `,
           prompt: aiMessages,
-          onAbort: async ({ steps }) => {
-            console.log("streamText aborted, finishedSteps:", steps);
+          onStepFinish: async (step) => {
+            console.log(
+              "finished step:",
+              step.finishReason,
+              ", toolCalls:",
+              step.toolCalls?.length,
+              ", usage:",
+              step.usage.raw,
+            );
           },
-          onError: async ({ error }) => {
-            console.error("streamText error:", error);
+          onAbort: async ({ steps }) => {
+            const last = steps[steps.length - 1];
+            console.log(
+              "streamText aborted",
+              "finishedSteps:",
+              steps.length,
+              "lastFinishReason:",
+              last?.finishReason,
+              "requestAborted:",
+              request.signal.aborted,
+            );
+          },
+          onError: async ({ error: e }) => {
+            console.error(
+              "streamText error:",
+              e instanceof Error ? e.message : e,
+              "name:",
+              e instanceof Error ? e.name : typeof e,
+              "cause:",
+              e instanceof Error ? e.cause : undefined,
+              "stack:",
+              e instanceof Error
+                ? e.stack?.split("\n").slice(0, 4).join("\n")
+                : undefined,
+            );
           },
           onFinish: async ({ text }) => {
-            if (!chat.topic) {
-              const chatHistory = aiMessages.map((c) => c.content.toString());
-              chatHistory.push(text);
-
-              const { text: topic } = await generateText({
-                model: openrouter("google/gemma-4-26b-a4b:free"),
-                prompt: `Genereer een onderwerp van deze conversatie (max 29 chars): ${chatHistory}`,
-              });
-              await prisma.chat.update({
-                where: { id: chat.id },
-                data: { topic },
-              });
-            }
             await prisma.message.create({
               data: {
                 content: text,
@@ -253,37 +270,42 @@ export const chatRoutes = new Elysia()
                 chatId: chat.id,
               },
             });
+
+            if (!chat.topic) {
+              const chatHistory = aiMessages.map((c) => c.content.toString());
+              chatHistory.push(text);
+
+              const { text: topic } = await generateText({
+                model: groq("compound-mini"),
+                prompt: `Genereer een onderwerp van deze conversatie (max 29 chars): ${chatHistory}`,
+              });
+              await prisma.chat.update({
+                where: { id: chat.id },
+                data: { topic },
+              });
+            }
           },
         });
 
       const readable = new ReadableStream({
         async start(controller) {
           const encoder = new TextEncoder();
-          let attempts = 3;
-
-          while (attempts-- > 0) {
-            try {
-              const stream = textStream();
-              for await (const chunk of stream.fullStream) {
-                if (request.signal.aborted) return;
-                controller.enqueue(
-                  encoder.encode(JSON.stringify(chunk) + "\n"),
-                );
-              }
-              break;
-            } catch (e: any) {
-              if (e.name === "AbortError") return;
-              if (attempts === 0) {
-                console.error("stream error:", e);
-                break;
-              }
-              await new Promise((r) => setTimeout(r, 1000));
-            }
-          }
-
           try {
-            controller.close();
-          } catch {}
+            const stream = textStream(streamAbort.signal);
+            for await (const chunk of stream.fullStream) {
+              if (streamAbort.signal.aborted) return;
+              controller.enqueue(encoder.encode(JSON.stringify(chunk) + "\n"));
+            }
+          } catch (e: any) {
+            if (e.name !== "AbortError") console.error("stream error:", e);
+          } finally {
+            try {
+              controller.close();
+            } catch {}
+          }
+        },
+        cancel() {
+          streamAbort.abort();
         },
       });
 

@@ -4,6 +4,7 @@ import { firefox, devices, Cookie } from "playwright";
 import z from "zod";
 
 const browser = await firefox.launch({ headless: true });
+const lessonYear = "Leerjaar-1-uitvoerend-en-zelfstandig";
 
 export type Recipe = {
   name: string;
@@ -15,7 +16,20 @@ export type Recipe = {
   url: string;
 };
 
+export type LessonPage = {
+  url: string;
+  pagesAvailable: number;
+  magazine: string;
+};
+
 export type RecipeTheme = "Banket" | "Brood";
+export type LessonElement =
+  | "Onderwerp"
+  | "Magazine"
+  | "Werkopdracht"
+  | "Theorieopdracht"
+  | "Instructie"
+  | "Toets";
 export type RecipeCategory = string;
 
 const mutex = new Mutex();
@@ -23,11 +37,13 @@ const mutex = new Mutex();
 const email = Bun.env.SVH_SERVICE_EMAIL;
 const password = Bun.env.SVH_SERVICE_PASSWORD;
 
-if (!email || !password) {
+if (!email || !password)
   throw new Error(
     "Missing SVH service credentials: set SVH_SERVICE_EMAIL and SVH_SERVICE_PASSWORD",
   );
-}
+
+const _email: string = email;
+const _password: string = password;
 
 export const getRecipesCategoriesTool: Tool = tool({
   description: "Get all recipe categories for a given recipe theme",
@@ -71,6 +87,39 @@ export const getRecipeTool = tool({
   execute: ({ recipeName }) => getRecipe(recipeName),
 });
 
+export const getLessonTopicsTool = tool({
+  description: "Get all lesson topics for leerjaar 1",
+  inputSchema: z.object({}),
+  execute: () => getLessonTopics(),
+});
+
+export const getLessonItemsTool = tool({
+  description: "Get lesson items for a given topic",
+  inputSchema: z.object({
+    topic: z.string().describe("The lesson topic"),
+  }),
+  execute: ({ topic }) => getLessonItems(topic),
+});
+
+export const getLessonPageTool = tool({
+  description: "Get the content of a specific lesson page",
+  inputSchema: z.object({
+    lessonTopic: z.string(),
+    lessonItem: z.string(),
+    lessonPage: z.number().int().min(1),
+    offset: z.number().int().min(0).optional(),
+    size: z.number().int().min(100).max(2000).optional(),
+  }),
+  execute: ({ lessonTopic, lessonItem, lessonPage, offset, size }) =>
+    getLessonPage(
+      lessonTopic,
+      lessonItem,
+      lessonPage,
+      offset ?? 0,
+      size ?? 2000,
+    ),
+});
+
 export async function verifyCookie(cookie: Cookie): Promise<boolean> {
   const expired = cookie.expires < Date.now() / 1000;
   if (expired) {
@@ -82,13 +131,13 @@ export async function verifyCookie(cookie: Cookie): Promise<boolean> {
   try {
     await context.setStorageState("storage.json");
     const page = await context.newPage();
+
     await page.goto("https://svhbakkerstalent.nl/Recepten");
     await page.waitForLoadState("domcontentloaded");
+
     const { pathname } = new URL(page.url());
     const valid = pathname === "/Recepten";
-    console.log(
-      `[verifyCookie] cookie valid: ${valid} (pathname: ${pathname})`,
-    );
+
     return valid;
   } finally {
     await context.close();
@@ -96,7 +145,6 @@ export async function verifyCookie(cookie: Cookie): Promise<boolean> {
 }
 
 export async function login(email: string, password: string) {
-  console.log("[login] attempting login...");
   await mutex.acquire();
 
   const context = await browser.newContext();
@@ -105,7 +153,6 @@ export async function login(email: string, password: string) {
     await context.setStorageState("storage.json");
     const crCookie = (await context.cookies()).find((c) => c.name === "CR");
     if (crCookie && (await verifyCookie(crCookie))) {
-      console.log("[login] cookie is valid, skipping login");
       mutex.release();
       await context.close();
       return;
@@ -141,6 +188,7 @@ export async function getRecipesCategories(
   recipeTheme: RecipeTheme,
 ): Promise<RecipeCategory[]> {
   console.log(`[getRecipesCategories] starting - theme: ${recipeTheme}`);
+  await login(_email, _password);
 
   const context = await browser.newContext(devices["Desktop Firefox"]);
   await context.setStorageState("storage.json");
@@ -190,7 +238,6 @@ export async function getRecipesCategories(
     return categoryNames;
   } finally {
     await context.close();
-    mutex.release();
   }
 }
 
@@ -201,6 +248,7 @@ export async function getRecipes(
   console.log(
     `[getRecipes] starting - theme: ${recipeTheme}, category: ${recipeCategory}`,
   );
+  await login(_email, _password);
 
   const context = await browser.newContext(devices["Desktop Firefox"]);
   await context.setStorageState("storage.json");
@@ -256,7 +304,6 @@ export async function getRecipes(
     return recipeNames;
   } finally {
     await context.close();
-    mutex.release();
   }
 }
 
@@ -266,6 +313,7 @@ export async function getRecipe(recipeName: string): Promise<Recipe> {
   }
 
   console.log(`[getRecipe] starting - recipeName: ${recipeName}`);
+  await login(_email, _password);
 
   const context = await browser.newContext(devices["Desktop Firefox"]);
   await context.setStorageState("storage.json");
@@ -331,22 +379,111 @@ export async function getRecipe(recipeName: string): Promise<Recipe> {
 
     console.log(`[getRecipe] done - returning recipe: ${result.name}`);
     return result;
-  } catch (e) {
-    console.error(`[getRecipe] error: ${e}`);
-    throw e;
   } finally {
     await context.close();
-    mutex.release();
   }
 }
 
-await login(email, password);
+export async function getLessonTopics(): Promise<string[]> {
+  await login(_email, _password);
+
+  const context = await browser.newContext(devices["Desktop Firefox"]);
+  await context.setStorageState("storage.json");
+
+  const page = await context.newPage();
+  try {
+    await page.goto(`https://svhbakkerstalent.nl/Leerlijn/${lessonYear}`);
+
+    const seen = new Set<string>();
+
+    for (const item of await page
+      .locator(".leerlijnMagazineItemWrap a[href]")
+      .all()) {
+      const href = await item.getAttribute("href");
+      if (!href) continue;
+      const match = href.match(/\/([^\/]+)\/([^\/]+)$/);
+      if (!match) continue;
+      seen.add(match[1]);
+    }
+
+    return [...seen];
+  } finally {
+    await context.close();
+  }
+}
+
+export async function getLessonItems(topic: string): Promise<string[]> {
+  await login(_email, _password);
+
+  const context = await browser.newContext(devices["Desktop Firefox"]);
+  await context.setStorageState("storage.json");
+
+  const page = await context.newPage();
+  try {
+    await page.goto(`https://svhbakkerstalent.nl/Leerlijn/${lessonYear}`);
+
+    const seen = new Set<string>();
+
+    for (const item of await page
+      .locator(".leerlijnMagazineItemWrap a[href]")
+      .all()) {
+      const href = await item.getAttribute("href");
+      if (!href) continue;
+      const match = href.match(/\/([^\/]+)\/([^\/]+)$/);
+      if (!match) continue;
+      if (match[1] !== topic) continue;
+      seen.add(match[2]);
+    }
+
+    return [...seen];
+  } finally {
+    await context.close();
+  }
+}
+
+export async function getLessonPage(
+  lessonTopic: string,
+  lessonItem: string,
+  lessonPage: number,
+  offset: number = 0,
+  size: number = 1500,
+): Promise<LessonPage> {
+  await login(_email, _password);
+
+  const context = await browser.newContext(devices["Desktop Firefox"]);
+  await context.setStorageState("storage.json");
+
+  const page = await context.newPage();
+  try {
+    await page.goto(
+      `https://svhbakkerstalent.nl/Leerlijn/${lessonYear}/${lessonTopic}/${lessonItem}/Pagina-${lessonPage}.html`,
+    );
+
+    const pagesAvailable = await page
+      .locator(".paginatePages > .paginatePage")
+      .count();
+    if (!pagesAvailable) throw new Error("no pages available");
+
+    const magazine = (await page.locator(".contentWrap").first().textContent())
+      ?.replace(/\s+/g, " ")
+      .trim();
+    if (!magazine) throw new Error("magazine not found");
+
+    return {
+      url: page.url(),
+      pagesAvailable,
+      magazine: magazine.substring(offset, offset + size),
+    };
+  } finally {
+    await context.close();
+  }
+}
 
 // const categories = await getRecipesCategories("Brood");
 // console.log(categories);
-
+//
 // const recipes = await getRecipes("Brood", categories[0]);
 // console.log(recipes);
-
+//
 // const recipe = await getRecipe("cheeks");
 // console.log(recipe);
