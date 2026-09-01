@@ -191,6 +191,13 @@
       flex-shrink: 0
   }
 
+  .chat-ava svg {
+      width: 15px;
+      height: 15px;
+      color: var(--white);
+      display: block
+  }
+
   .chat-name-t {
       font-size: 11px;
       font-weight: 700;
@@ -463,6 +470,10 @@
       font-size: 52px;
       position: relative;
       overflow: hidden
+  }
+
+  .pc-img svg {
+      display: block
   }
 
   .pc-img-label {

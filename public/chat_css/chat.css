@@ -7,66 +7,140 @@ body {
     font-size: 15px;
 }
 
-nav {
-    background: var(--white);
-    border-bottom: 2px solid var(--gold);
-    display: flex;
-    align-items: center;
-    padding: 0 40px;
-    height: 60px;
-    flex-shrink: 0;
-}
-
-.nav-inner {
-    width: 100%;
-    max-width: var(--max);
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.nav-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.nav-logo svg {
-    height: 32px;
-    width: auto;
-    display: block;
-    fill: var(--black);
-}
-
-.nav-sep {
-    width: 1px;
-    height: 18px;
-    background: var(--grey-light);
-}
-
-.nav-title {
-    font-size: 13px;
-    color: var(--grey-text);
-    letter-spacing: 0.01em;
-}
-
 .main {
     flex: 1;
     display: flex;
     overflow: hidden;
+    position: relative;
 }
 
-#chats {
-    width: 220px;
+.sidebar {
+    width: 240px;
     flex-shrink: 0;
     background: var(--white);
     border-right: 1px solid var(--grey-light);
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    padding: 12px 8px;
     min-height: 0;
+    overflow: hidden;
+    transition: width 0.2s ease;
+}
+
+.sidebar.collapsed {
+    width: 0;
+    border-right: none;
+}
+
+.sidebar-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 12px 10px 16px;
+    flex-shrink: 0;
+}
+
+.sidebar-ava {
+    width: 26px;
+    height: 26px;
+    background: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sidebar-ava svg {
+    width: 14px;
+    height: 14px;
+    color: var(--white);
+    display: block;
+}
+
+.sidebar-label {
+    flex: 1;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--gold);
+    white-space: nowrap;
+}
+
+.sidebar-toggle {
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--grey-light);
+    border-radius: 4px;
+    background: var(--white);
+    color: var(--black);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition:
+        background 0.15s,
+        color 0.15s,
+        border-color 0.15s;
+}
+
+.sidebar-toggle:hover {
+    background: var(--gold);
+    color: var(--white);
+    border-color: var(--gold);
+}
+
+.sidebar-float {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 5;
+    transition: opacity 0.2s ease;
+}
+
+.sidebar.collapsed ~ .sidebar-float {
+    display: flex;
+}
+
+.float-btn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--grey-light);
+    border-radius: 4px;
+    background: var(--white);
+    color: var(--black);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    transition:
+        background 0.15s,
+        color 0.15s,
+        border-color 0.15s;
+}
+
+.float-btn:hover {
+    background: var(--gold);
+    color: var(--white);
+    border-color: var(--gold);
+}
+
+#chats {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 8px 12px;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 #chats .chatButton {
@@ -148,12 +222,27 @@ nav {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 24px;
+    gap: 20px;
     padding: 32px;
 }
 
 #empty-state.visible {
     display: flex;
+}
+
+.empty-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+
+#empty-state h2 {
+    font-size: clamp(20px, 2.6vw, 28px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--black);
 }
 
 #lechonk::-webkit-scrollbar {
@@ -179,8 +268,9 @@ nav {
     padding: 10px 14px;
     font-size: 14px;
     line-height: 1.6;
-    background: var(--gold-light);
-    color: var(--black);
+    background: var(--gold);
+    color: var(--white);
+    font-weight: 500;
     border-radius: 16px 16px 4px 16px;
     margin: 0;
 }
@@ -256,8 +346,8 @@ nav {
 #input {
     flex: 1;
     border: 1px solid var(--grey-light);
-    border-radius: 22px;
-    padding: 9px 16px;
+    border-radius: 4px;
+    padding: 10px 14px;
     font-size: 14px;
     font-family: var(--font);
     background: var(--grey-bg);
@@ -278,9 +368,9 @@ nav {
 }
 
 #butone {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
     background: var(--gold);
     border: none;
     cursor: pointer;
@@ -290,12 +380,14 @@ nav {
     flex-shrink: 0;
     font-size: 18px;
     color: var(--white);
-    transition: opacity 0.15s;
+    transition:
+        background 0.15s,
+        transform 0.1s;
     line-height: 1;
 }
 
 #butone:hover {
-    opacity: 0.85;
+    background: #9a7622;
 }
 
 #butone:active {
@@ -303,37 +395,54 @@ nav {
 }
 
 #empty-state h2 {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: clamp(20px, 2.6vw, 28px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
     color: var(--black);
 }
 
 .suggestions {
     display: flex;
     flex-direction: column;
-    gap: 10px;
     width: 100%;
-    max-width: 420px;
+    max-width: 480px;
+    margin-top: 8px;
 }
 
 .suggestion-btn {
-    background: var(--white);
-    border: 1px solid var(--grey-light);
-    border-radius: 4px;
-    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--grey-light);
+    padding: 16px 0;
     font-size: 14px;
+    font-weight: 500;
     font-family: var(--font);
     color: var(--black);
     text-align: left;
     cursor: pointer;
-    transition:
-        border-color 0.15s,
-        background 0.15s;
+    transition: color 0.15s;
+}
+
+.suggestion-btn:first-child {
+    border-top: 1px solid var(--grey-light);
 }
 
 .suggestion-btn:hover {
-    border-color: var(--gold);
-    background: var(--gold-light);
+    color: var(--gold);
+}
+
+.suggestion-btn:hover .link-arrow {
+    transform: translate(3px, -3px);
+    color: var(--gold);
+}
+
+.suggestion-btn .link-arrow {
+    flex-shrink: 0;
+    transition: transform 0.18s;
 }
 
 .reasoning-indicator {
@@ -411,11 +520,7 @@ nav {
 }
 
 @media (max-width: 720px) {
-    nav {
-        padding: 0 20px;
-    }
-
-    #chats {
+    .sidebar {
         display: none;
     }
 }

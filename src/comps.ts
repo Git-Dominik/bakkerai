@@ -18,7 +18,7 @@ export const compRoutes = new Elysia()
         : `
           <div class="nav-right">
             <a class="loginLink" href="/login">Inloggen</a>
-            <a class="loginLink" href="/register">Registreren</a>
+            <a class="loginLink btn-register" href="/register">Registreren</a>
           </div>
         `;
     },
