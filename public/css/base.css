@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,600;0,700;0,800;1,700;1,800&display=swap');
-
 *,
 *::before,
 *::after {
@@ -9,23 +7,134 @@
 }
 
 :root {
-  --gold: #b8922a;
-  --gold-light: #f5ead4;
-  --black: #111;
-  --white: #fff;
-  --grey-bg: #f7f7f5;
-  --grey-text: #666;
-  --grey-light: #e8e8e5;
-  --teal: #1a4a42;
-  --teal-dark: #143d36;
-  --font: 'Barlow', Arial, sans-serif;
+  --gold: #c15f3c;
+  --gold-light: #f4e9e3;
+  --black: #292825;
+  --white: #fffefa;
+  --grey-bg: #faf9f6;
+  --grey-text: #77736c;
+  --grey-light: #e8e5df;
+  --teal: #b95635;
+  --teal-dark: #99452b;
+  --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --max: 1080px;
+}
+
+html.dark-theme {
+  --gold: #d97757;
+  --gold-light: #3a302b;
+  --black: #e8e6df;
+  --white: #30302e;
+  --grey-bg: #262624;
+  --grey-text: #aaa8a1;
+  --grey-light: #41403c;
+  --teal: #d97757;
+  --teal-dark: #bd6245;
+  color-scheme: dark;
 }
 
 body {
   font-family: var(--font);
-  background: var(--white);
+  background: var(--grey-bg);
   color: var(--black);
   font-size: 15px;
   overflow-x: hidden
+}
+
+::selection {
+  background: #ead2c6;
+}
+
+.theme-toggle {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--grey-text);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.theme-toggle:hover {
+  background: #f0eee9;
+  color: var(--black);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.theme-toggle svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.theme-icon-sun {
+  display: none;
+}
+
+html.dark-theme .theme-icon-moon {
+  display: none;
+}
+
+html.dark-theme .theme-icon-sun {
+  display: block;
+}
+
+.auth-theme-toggle {
+  position: fixed;
+  z-index: 5;
+  top: 20px;
+  right: 24px;
+}
+
+html.dark-theme body {
+  background: var(--grey-bg);
+  color: var(--black);
+}
+
+html.dark-theme .auth-container {
+  background: #2b2b29;
+  border-color: #41403c;
+  box-shadow: 0 18px 60px rgb(0 0 0 / 18%);
+}
+
+html.dark-theme .auth-input {
+  background: #262624;
+  border-color: #454440;
+  color: var(--black);
+}
+
+html.dark-theme .auth-input:focus {
+  background: #30302e;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgb(217 119 87 / 16%);
+}
+
+html.dark-theme .auth-input::placeholder {
+  color: #89867f;
+}
+
+html.dark-theme .auth-button:hover {
+  background: var(--teal-dark);
+}
+
+html.dark-theme .theme-toggle:hover {
+  background: #373631;
+  color: var(--black);
+}
+
+html.dark-theme .register-prompt a,
+html.dark-theme .auth-footer a,
+html.dark-theme .forgot-link:hover {
+  color: #e18a6b;
 }

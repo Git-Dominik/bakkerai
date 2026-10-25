@@ -219,8 +219,35 @@ h3 {
   color: var(--grey-text);
   padding: 40px 24px;
   background: var(--white);
-  border-radius: 4px;
+  border-radius: 14px;
   border: 1px solid var(--grey-light);
+}
+
+.back-btn {
+  border-radius: 9px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.page-title,
+.user-header h2,
+.chat-header h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+}
+
+.data-table,
+.user-header,
+.chat-header,
+.message {
+  border-radius: 12px;
+  box-shadow: 0 3px 16px rgb(49 40 31 / 4%);
+}
+
+.message.assistant {
+  border-left-color: var(--gold);
 }
 
 @media (max-width: 720px) {

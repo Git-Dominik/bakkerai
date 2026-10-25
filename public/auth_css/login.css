@@ -17,8 +17,9 @@ body {
     background: var(--white);
     border: 1px solid var(--grey-light);
     border-radius: 4px;
-    padding: 48px 44px 44px;
-    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.05);
+    padding: 44px 42px 40px;
+    border-radius: 18px;
+    box-shadow: 0 18px 60px rgb(49 40 31 / 5%);
 }
 
 .logo {
@@ -30,11 +31,13 @@ body {
     width: 110px;
     height: auto;
     display: block;
+    fill: var(--gold);
 }
 
 .heading {
-    font-weight: 800;
-    font-size: 26px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 400;
+    font-size: 30px;
     line-height: 1.15;
     color: var(--black);
     margin-bottom: 6px;
@@ -72,7 +75,7 @@ label {
     width: 100%;
     background: var(--grey-bg);
     border: 1px solid var(--grey-light);
-    border-radius: 3px;
+    border-radius: 9px;
     padding: 13px 16px;
     font-family: var(--font);
     font-size: 15px;
@@ -120,18 +123,35 @@ label {
     font-weight: 700;
     letter-spacing: 0.3px;
     border: none;
-    border-radius: 3px;
+    border-radius: 9px;
     padding: 14px;
     cursor: pointer;
     transition: background 0.2s, transform 0.1s;
 }
 
 .auth-button:hover {
-    background: #143d36;
+    background: var(--teal-dark);
 }
 
 .auth-button:active {
     transform: scale(0.99);
+}
+
+.register-prompt {
+    margin-top: 22px;
+    color: var(--grey-text);
+    font-size: 13px;
+    text-align: center;
+}
+
+.register-prompt a {
+    color: var(--teal);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.register-prompt a:hover {
+    text-decoration: underline;
 }
 
 @media (max-width: 480px) {

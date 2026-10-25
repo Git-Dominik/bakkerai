@@ -3,6 +3,19 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <script>
+            try {
+                if (localStorage.getItem("bakkerbot-theme") === "dark") {
+                    document.documentElement.classList.add("dark-theme");
+                }
+                if (
+                    localStorage.getItem("bakkerbot-sidebar-collapsed") === "true" &&
+                    !window.matchMedia("(max-width: 720px)").matches
+                ) {
+                    document.documentElement.classList.add("sidebar-start-collapsed");
+                }
+            } catch {}
+        </script>
         <link rel="stylesheet" href="/css/base.css" />
         <link rel="stylesheet" href="/css/nav.css" />
         <link rel="stylesheet" href="/chat_css/chat.css" />
@@ -17,6 +30,20 @@
         <nav>
             <div class="nav-inner">
                 <div class="nav-left">
+                    <button
+                        id="toggle-chats"
+                        class="sidebar-toggle"
+                        type="button"
+                        aria-label="Chats verbergen"
+                        aria-controls="chats"
+                        aria-expanded="true"
+                        title="Chats verbergen"
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <rect x="3.5" y="4" width="17" height="16" rx="2" />
+                            <path d="M9 4v16" />
+                        </svg>
+                    </button>
                     <a href="/" class="nav-logo">
                         <svg
                             viewBox="0 0 450 80"
@@ -30,50 +57,74 @@
                     </a>
                     <div class="nav-sep"></div>
                     <span class="nav-title">BakkerBot</span>
+                    <button
+                        id="theme-toggle"
+                        class="theme-toggle"
+                        type="button"
+                        aria-label="Schakel naar donker thema"
+                        aria-pressed="false"
+                        title="Donker thema"
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <g class="theme-icon-moon">
+                                <path d="M20.2 15.1A8.4 8.4 0 0 1 8.9 3.8 8.5 8.5 0 1 0 20.2 15.1Z" />
+                            </g>
+                            <g class="theme-icon-sun">
+                                <circle cx="12" cy="12" r="4" />
+                                <path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" />
+                            </g>
+                        </svg>
+                    </button>
                 </div>
-                <div
-                    hx-get="/api/comp/header"
-                    hx-trigger="load"
-                    hx-swap="outerHTML"
-                ></div>
             </div>
         </nav>
 
         <div class="main">
-            <div id="chats"></div>
+            <aside class="chat-sidebar" id="chat-sidebar">
+                <div id="chats"></div>
+                <div
+                    class="sidebar-account"
+                    hx-get="/api/comp/account"
+                    hx-trigger="load"
+                    hx-swap="innerHTML"
+                >
+                    <a href="/login">Inloggen</a>
+                </div>
+            </aside>
 
             <div class="chat-col">
-                <div id="lechonk"></div>
-                <div id="empty-state">
-                    <h2>Waar kan ik je mee helpen? 👋</h2>
-                    <div class="suggestions">
-                        <button
-                            class="suggestion-btn"
-                            onclick="useSuggestion(this)"
-                        >
-                            Ik wil leren voor mijn bakker toets
-                        </button>
-                        <button
-                            class="suggestion-btn"
-                            onclick="useSuggestion(this)"
-                        >
-                            Ik wil recepten vinden of suggesties
+                <div class="conversation-shell">
+                    <div id="lechonk"></div>
+                    <div id="empty-state">
+                        <h2>Waar kan ik je mee helpen? 👋</h2>
+                        <div class="suggestions">
+                            <button class="suggestion-btn" onclick="useSuggestion(this)">
+                                Ik wil leren voor mijn bakker toets
+                            </button>
+                            <button class="suggestion-btn" onclick="useSuggestion(this)">
+                                Ik wil recepten vinden of suggesties
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="input-bar">
+                        <input
+                            id="input"
+                            placeholder="Stel een vraag over je opleiding..."
+                            type="text"
+                            autocomplete="off"
+                        />
+                        <button id="butone" type="button" aria-label="Bericht versturen" title="Versturen">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 19V5m0 0L6 11m6-6 6 6" />
+                            </svg>
                         </button>
                     </div>
-                </div>
-
-                <div id="input-bar">
-                    <input
-                        id="input"
-                        placeholder="Stel een vraag over je opleiding..."
-                        type="text"
-                        autocomplete="off"
-                    />
-                    <button id="butone" aria-label="Versturen">↑</button>
                 </div>
             </div>
         </div>
 
+        <script src="/theme.js"></script>
         <script type="module" src="../script.js"></script>
     </body>
 </html>

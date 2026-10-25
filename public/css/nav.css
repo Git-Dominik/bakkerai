@@ -3,7 +3,7 @@ nav {
     top: 0;
     z-index: 100;
     background: var(--white);
-    border-bottom: 2px solid var(--gold);
+    border-bottom: 1px solid var(--grey-light);
     height: 60px;
     display: flex;
     align-items: center;
@@ -32,8 +32,8 @@ nav {
 }
 
 .nav-logo svg {
-    height: 32px;
-    width: auto;
+    width: 112px;
+    height: auto;
 }
 
 .nav-links {
@@ -45,9 +45,8 @@ nav {
 
 .nav-link {
     font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-weight: 500;
+    letter-spacing: 0;
     color: var(--black);
     text-decoration: none;
     padding: 0 14px;
@@ -92,7 +91,8 @@ nav {
 .btn-register {
     background: var(--gold) !important;
     color: var(--white) !important;
-    padding: 9px 20px;
+    padding: 9px 16px;
+    border-radius: 8px;
     transition: background 0.15s !important;
     border: none !important;
 }

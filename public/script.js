@@ -19,6 +19,9 @@ const apiUrl = `${window.location.origin}/api`;
 const input = document.getElementById("input");
 const button = document.getElementById("butone");
 const lechonk = document.getElementById("lechonk");
+const toggleChatsButton = document.getElementById("toggle-chats");
+const chatMain = document.querySelector(".main");
+const isMobileSidebar = window.matchMedia("(max-width: 720px)");
 
 let currentChat;
 let busy = false;
@@ -132,7 +135,12 @@ async function getChats() {
   scrollToBottom();
 
   const newChatElement = document.createElement("button");
-  newChatElement.textContent = "+ New Chat";
+  newChatElement.innerHTML = `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+    <span>Nieuwe chat</span>
+  `;
   newChatElement.classList.add("new-chat-btn");
   newChatElement.addEventListener("click", () => {
     userScrolledUp = false;
@@ -420,6 +428,68 @@ export async function sendMessage() {
 
 input.addEventListener("keypress", sendMessageKeyPress);
 button.addEventListener("click", sendMessage);
+
+function getSidebarOpenPreference() {
+  try {
+    return localStorage.getItem("bakkerbot-sidebar-collapsed") !== "true";
+  } catch {
+    return true;
+  }
+}
+
+function setChatSidebarOpen(open, savePreference = true) {
+  const mobile = isMobileSidebar.matches;
+  document.body.classList.toggle("chat-sidebar-open", mobile && open);
+  chatMain.classList.toggle("sidebar-collapsed", !mobile && !open);
+  if (savePreference && !mobile) {
+    try {
+      localStorage.setItem("bakkerbot-sidebar-collapsed", String(!open));
+    } catch {}
+  }
+  toggleChatsButton.setAttribute("aria-expanded", String(open));
+  toggleChatsButton.setAttribute(
+    "aria-label",
+    open ? "Chats verbergen" : "Chats tonen",
+  );
+  toggleChatsButton.title = open ? "Chats verbergen" : "Chats tonen";
+}
+
+toggleChatsButton.addEventListener("click", () => {
+  const open = isMobileSidebar.matches
+    ? !document.body.classList.contains("chat-sidebar-open")
+    : chatMain.classList.contains("sidebar-collapsed");
+  setChatSidebarOpen(open);
+});
+
+document.addEventListener("click", (event) => {
+  document.querySelectorAll(".account-menu[open]").forEach((menu) => {
+    if (!menu.contains(event.target)) menu.removeAttribute("open");
+  });
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    document.querySelectorAll(".account-menu[open]").forEach((menu) => {
+      menu.removeAttribute("open");
+    });
+  }
+});
+
+setChatSidebarOpen(
+  isMobileSidebar.matches ? false : getSidebarOpenPreference(),
+  false,
+);
+document.documentElement.classList.remove("sidebar-start-collapsed");
+window.addEventListener("resize", () => {
+  setChatSidebarOpen(
+    isMobileSidebar.matches ? false : getSidebarOpenPreference(),
+    false,
+  );
+});
+chatMain.addEventListener("click", (event) => {
+  if (isMobileSidebar.matches && event.target === chatMain) {
+    setChatSidebarOpen(false);
+  }
+});
 
 lechonk.addEventListener("scroll", () => {
   userScrolledUp = !isNearBottom();
