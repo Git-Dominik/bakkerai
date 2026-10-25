@@ -218,6 +218,7 @@ export async function createChat() {
 
 export async function sendMessage() {
   const messageText = input.value;
+  if (!messageText.trim()) return;
   input.value = "";
 
   const messages = document.getElementById("lechonk");
@@ -242,8 +243,6 @@ export async function sendMessage() {
     }
     navigateToChat(currentChat);
   }
-
-  if (!input) return;
 
   const response = await apiFetch(`/chats/${currentChat}/messages`, {
     method: "POST",

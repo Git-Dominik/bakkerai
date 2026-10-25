@@ -145,27 +145,25 @@ export async function verifyCookie(cookie: Cookie): Promise<boolean> {
 }
 
 export async function login(email: string, password: string) {
-  await mutex.acquire();
-
-  const context = await browser.newContext();
-
-  if (await Bun.file("storage.json").exists()) {
-    await context.setStorageState("storage.json");
-    const crCookie = (await context.cookies()).find((c) => c.name === "CR");
-    if (crCookie && (await verifyCookie(crCookie))) {
-      mutex.release();
-      await context.close();
-      return;
-    } else {
-      console.log("[login] cookie invalid or expired, getting new cookie");
-    }
-  } else {
-    console.log("[login] no storage.json found, performing full login");
-  }
-
-  const page = await context.newPage();
+  const release = await mutex.acquire();
+  let context;
 
   try {
+    context = await browser.newContext();
+
+    if (await Bun.file("storage.json").exists()) {
+      await context.setStorageState("storage.json");
+      const crCookie = (await context.cookies()).find((c) => c.name === "CR");
+      if (crCookie && (await verifyCookie(crCookie))) {
+        return;
+      } else {
+        console.log("[login] cookie invalid or expired, getting new cookie");
+      }
+    } else {
+      console.log("[login] no storage.json found, performing full login");
+    }
+
+    const page = await context.newPage();
     console.log("[login] navigating to login page");
     await page.goto("https://svhbakkerstalent.nl/login.html");
 
@@ -179,8 +177,11 @@ export async function login(email: string, password: string) {
     await context.storageState({ path: "storage.json" });
     console.log("[login] login successful, storage saved");
   } finally {
-    await context.close();
-    mutex.release();
+    try {
+      await context?.close();
+    } finally {
+      release();
+    }
   }
 }
 
