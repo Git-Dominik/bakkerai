@@ -15,8 +15,9 @@ body {
 
 .page-title {
   font-size: 26px;
-  font-weight: 800;
-  letter-spacing: -.02em;
+  font-weight: 300;
+  letter-spacing: -.01em;
+  line-height: 1.05;
   color: var(--black);
 }
 
@@ -27,7 +28,7 @@ body {
   letter-spacing: .06em;
   text-transform: uppercase;
   background: var(--gold);
-  color: var(--white);
+  color: var(--bg);
   border: none;
   padding: 9px 20px;
   border-radius: 3px;
@@ -37,7 +38,8 @@ body {
 }
 
 .back-btn:hover {
-  background: #9a7622;
+  background: var(--accent-solid);
+  color: var(--fg);
 }
 
 main {
@@ -55,12 +57,12 @@ main {
 }
 
 .error {
-  background: #fff0f0;
-  color: #c00;
+  background: rgb(255 110 130 / 10%);
+  color: #ff9aaa;
   padding: 14px 18px;
   border-radius: 3px;
   margin-bottom: 20px;
-  border: 1px solid #fdd;
+  border: 1px solid rgb(255 154 170 / 24%);
   font-size: 14px;
 }
 
@@ -190,16 +192,6 @@ h3 {
   border-radius: 2px;
 }
 
-.message.user .role-badge {
-  background: var(--gold-light);
-  color: var(--gold);
-}
-
-.message.assistant .role-badge {
-  background: #e0eeeb;
-  color: var(--teal);
-}
-
 .timestamp {
   font-size: 12px;
   color: var(--grey-text);
@@ -234,8 +226,10 @@ h3 {
 .page-title,
 .user-header h2,
 .chat-header h2 {
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 400;
+  font-family: var(--font);
+  font-weight: 300;
+  letter-spacing: -.01em;
+  line-height: 1.05;
 }
 
 .data-table,
@@ -243,11 +237,25 @@ h3 {
 .chat-header,
 .message {
   border-radius: 12px;
-  box-shadow: 0 3px 16px rgb(49 40 31 / 4%);
+  box-shadow: 0 3px 16px rgba(0, 0, 0, 0.28);
 }
 
 .message.assistant {
   border-left-color: var(--gold);
+}
+
+.message.user .role-badge,
+.message.assistant .role-badge {
+  background: rgba(var(--accent), 0.12);
+  color: var(--accent-ink);
+}
+
+.message.assistant {
+  background: var(--panel-raised);
+}
+
+.data-table tbody tr:hover {
+  background: var(--panel-hover);
 }
 
 @media (max-width: 720px) {

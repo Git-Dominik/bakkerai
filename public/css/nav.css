@@ -34,6 +34,7 @@ nav {
 .nav-logo svg {
     width: 112px;
     height: auto;
+    fill: var(--black);
 }
 
 .nav-links {
@@ -90,7 +91,7 @@ nav {
 
 .btn-register {
     background: var(--gold) !important;
-    color: var(--white) !important;
+    color: var(--bg) !important;
     padding: 9px 16px;
     border-radius: 8px;
     transition: background 0.15s !important;
@@ -98,5 +99,6 @@ nav {
 }
 
 .btn-register:hover {
-    background: #9a7622 !important;
+    background: var(--accent-solid) !important;
+    color: var(--fg) !important;
 }

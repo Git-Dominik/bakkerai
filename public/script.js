@@ -441,6 +441,7 @@ function getSidebarOpenPreference() {
 function setChatSidebarOpen(open, savePreference = true) {
   const mobile = isMobileSidebar.matches;
   document.body.classList.toggle("chat-sidebar-open", mobile && open);
+  document.body.classList.toggle("chat-sidebar-collapsed", !mobile && !open);
   chatMain.classList.toggle("sidebar-collapsed", !mobile && !open);
   if (savePreference && !mobile) {
     try {

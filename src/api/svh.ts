@@ -37,13 +37,8 @@ const mutex = new Mutex();
 const email = Bun.env.SVH_SERVICE_EMAIL;
 const password = Bun.env.SVH_SERVICE_PASSWORD;
 
-if (!email || !password)
-  throw new Error(
-    "Missing SVH service credentials: set SVH_SERVICE_EMAIL and SVH_SERVICE_PASSWORD",
-  );
-
-const _email: string = email;
-const _password: string = password;
+const _email = email ?? "";
+const _password = password ?? "";
 
 export const getRecipesCategoriesTool: Tool = tool({
   description: "Get all recipe categories for a given recipe theme",
@@ -145,6 +140,11 @@ export async function verifyCookie(cookie: Cookie): Promise<boolean> {
 }
 
 export async function login(email: string, password: string) {
+  if (!email || !password) {
+    throw new Error(
+      "SVH lookup requires SVH_SERVICE_EMAIL and SVH_SERVICE_PASSWORD",
+    );
+  }
   const release = await mutex.acquire();
   let context;
 

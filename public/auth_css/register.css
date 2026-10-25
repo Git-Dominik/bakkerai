@@ -14,7 +14,7 @@ body.auth-page {
   border: 1px solid var(--grey-light);
   border-radius: 18px;
   padding: 48px 44px 44px;
-  box-shadow: 0 18px 60px rgb(49 40 31 / 5%);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
 }
 
 .logo {
@@ -30,13 +30,12 @@ body.auth-page {
 }
 
 .heading {
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 400;
   font-size: 30px;
-  line-height: 1.15;
+  font-weight: 300;
+  line-height: 1.05;
   color: var(--black);
   margin-bottom: 6px;
-  letter-spacing: -0.3px;
+  letter-spacing: -.01em;
 }
 
 .heading em {
@@ -82,19 +81,19 @@ label {
 }
 
 .auth-input::placeholder {
-  color: #bbb;
+  color: var(--grey-text);
 }
 
 .auth-input:focus {
   border-color: var(--teal);
-  box-shadow: 0 0 0 3px rgba(26, 74, 66, 0.10);
+  box-shadow: 0 0 0 3px rgba(var(--accent), 0.16);
   background: var(--white);
 }
 
 .auth-button {
   width: 100%;
   background: var(--teal);
-  color: var(--white);
+  color: var(--bg);
   font-family: var(--font);
   font-size: 15px;
   font-weight: 700;

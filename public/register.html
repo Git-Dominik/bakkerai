@@ -1,33 +1,15 @@
 <!doctype html>
-<html lang="nl">
+<html lang="nl" class="dark-theme">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="preconnect" href="https://api.fontshare.com" />
+        <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,600,700&display=swap" />
         <title>BakkerBot — Registreren</title>
-        <script>
-            try {
-                if (localStorage.getItem("bakkerbot-theme") === "dark") {
-                    document.documentElement.classList.add("dark-theme");
-                }
-            } catch {}
-        </script>
         <link rel="stylesheet" href="css/base.css" />
         <link rel="stylesheet" href="auth_css/register.css" />
     </head>
     <body class="auth-page">
-        <button
-            id="theme-toggle"
-            class="theme-toggle auth-theme-toggle"
-            type="button"
-            aria-label="Schakel naar donker thema"
-            aria-pressed="false"
-            title="Donker thema"
-        >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-                <g class="theme-icon-moon"><path d="M20.2 15.1A8.4 8.4 0 0 1 8.9 3.8 8.5 8.5 0 1 0 20.2 15.1Z" /></g>
-                <g class="theme-icon-sun"><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42" /></g>
-            </svg>
-        </button>
         <div class="auth-container">
             <div class="logo">
                 <a href="#">
@@ -97,6 +79,5 @@
                 Al een account? <a href="/login">Inloggen</a>
             </p>
         </div>
-        <script src="/theme.js"></script>
     </body>
 </html>
