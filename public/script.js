@@ -76,6 +76,14 @@ function navigateToChat(chatId) {
   currentChat = chatId;
 }
 
+function startNewChat() {
+  userScrolledUp = false;
+  currentChat = null;
+  if (lechonk) lechonk.innerHTML = "";
+  navigateToChat(null);
+  showEmptyState();
+}
+
 function sendMessageKeyPress(event) {
   if (event.key === "Enter") {
     sendMessage();
@@ -142,13 +150,7 @@ async function getChats() {
     <span>Nieuwe chat</span>
   `;
   newChatElement.classList.add("new-chat-btn");
-  newChatElement.addEventListener("click", () => {
-    userScrolledUp = false;
-    currentChat = null;
-    lechonk.innerHTML = "";
-    navigateToChat(null);
-    showEmptyState();
-  });
+  newChatElement.addEventListener("click", startNewChat);
   chats.append(newChatElement);
 
   const chatIdFromPath = getChatIdFromPath();
@@ -509,3 +511,23 @@ window.addEventListener("popstate", () => {
 
 await getChats();
 showEmptyState();
+
+const sidebar = document.getElementById("sidebar");
+if (sidebar) {
+  const stored = localStorage.getItem("bakkerbot:sidebar");
+  if (stored === "collapsed") sidebar.classList.add("collapsed");
+
+  const collapseBtn = document.getElementById("sidebarCollapse");
+  const expandBtn = document.getElementById("sidebarExpand");
+  const newChatBtn = document.getElementById("sidebarNew");
+
+  collapseBtn?.addEventListener("click", () => {
+    const collapsed = sidebar.classList.toggle("collapsed");
+    localStorage.setItem("bakkerbot:sidebar", collapsed ? "collapsed" : "open");
+  });
+  expandBtn?.addEventListener("click", () => {
+    sidebar.classList.remove("collapsed");
+    localStorage.setItem("bakkerbot:sidebar", "open");
+  });
+  newChatBtn?.addEventListener("click", startNewChat);
+}
