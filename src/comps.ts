@@ -1,6 +1,7 @@
 import jwt from "@elysiajs/jwt";
 import Elysia, { t } from "elysia";
 import { prisma } from "./db";
+import { JWT_SECRET } from "./config";
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (character) => {
@@ -16,12 +17,20 @@ function escapeHtml(value: string) {
 }
 
 export const compRoutes = new Elysia()
-  .use(jwt({ name: "jwt", secret: "SuperSecretKey" }))
+  .use(jwt({ name: "jwt", secret: JWT_SECRET }))
   .get(
     "/comp/header",
     async ({ cookie: { auth }, jwt }) => {
       const token = auth?.value;
-      const loggedIn = token !== undefined && (await jwt.verify(token));
+      let loggedIn = false;
+
+      if (token) {
+        try {
+          loggedIn = Boolean(await jwt.verify(token));
+        } catch {
+          loggedIn = false;
+        }
+      }
 
       return loggedIn
         ? `
@@ -45,7 +54,16 @@ export const compRoutes = new Elysia()
   .get(
     "/comp/account",
     async ({ cookie: { auth }, jwt }) => {
-      const claims = auth?.value ? await jwt.verify(auth.value) : false;
+      let claims: any = false;
+
+      if (auth?.value) {
+        try {
+          claims = await jwt.verify(auth.value);
+        } catch {
+          claims = false;
+        }
+      }
+
       if (!claims || typeof claims.email !== "string") {
         return `<a href="/login">Inloggen</a>`;
       }

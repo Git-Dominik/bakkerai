@@ -1,7 +1,8 @@
 import { Elysia, t, ElysiaCustomStatusResponse } from "elysia";
 import { generateText, modelMessageSchema, stepCountIs, streamText } from "ai";
 import jwt from "@elysiajs/jwt";
-import { prisma, openrouter, groq } from "./db";
+import { prisma, groq } from "./db";
+import { JWT_SECRET } from "./config";
 import {
     getLessonTopicsTool,
     getLessonItemsTool,
@@ -11,23 +12,84 @@ import {
     getRecipeTool,
 } from "./api/svh";
 
+const topicModel = groq("openai/gpt-oss-20b");
+const pendingTopics = new Set<number>();
+
+function sanitizeTopic(text: string) {
+    return text
+        .replace(/^[\s"'`]+|[\s"'`.!?]+$/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 60);
+}
+
+async function generateChatTopic(chatId: number) {
+    if (pendingTopics.has(chatId)) return;
+    pendingTopics.add(chatId);
+
+    try {
+        const chat = await prisma.chat.findUnique({
+            where: { id: chatId },
+        });
+        if (!chat || chat.topic) return;
+
+        const messages = await prisma.message.findMany({
+            where: { chatId },
+            orderBy: { id: "asc" },
+            take: 12,
+        });
+        if (messages.length === 0) return;
+
+        const history = messages
+            .map((m) => `${m.userId ? "Gebruiker" : "Assistent"}: ${m.content}`)
+            .join("\n");
+
+        const { text } = await generateText({
+            model: topicModel,
+            system:
+                "Je vat een gesprek samen als een korte, duidelijke chattitel in het Nederlands. Antwoord alleen met de titel: maximaal 6 woorden, zonder aanhalingstekens of leestekens aan het einde.",
+            prompt: history,
+        });
+
+        const topic = sanitizeTopic(text);
+        if (!topic) return;
+
+        await prisma.chat.update({
+            where: { id: chatId },
+            data: { topic },
+        });
+    } catch (e) {
+        console.error(
+            "Failed to generate chat topic:",
+            e instanceof Error ? e.message : e,
+        );
+    } finally {
+        pendingTopics.delete(chatId);
+    }
+}
+
+async function getAuthUser(auth: { value?: string }, jwt: any) {
+    const token = auth?.value;
+    if (!token) return null;
+
+    try {
+        const claims = await jwt.verify(token);
+        if (!claims || typeof claims.email !== "string") return null;
+
+        return await prisma.user.findUnique({
+            where: { email: claims.email, emailVerified: true },
+        });
+    } catch {
+        return null;
+    }
+}
+
 export const chatRoutes = new Elysia()
-    .use(jwt({ name: "jwt", secret: "SuperSecretKey" }))
+    .use(jwt({ name: "jwt", secret: JWT_SECRET }))
     .get(
         "/chats",
         async ({ cookie: { auth }, jwt }) => {
-            const token = auth?.value;
-            if (!token) {
-                return new ElysiaCustomStatusResponse("Unauthorized", {
-                    summary: "Missing token",
-                });
-            }
-
-            const { email } = await jwt.verify(token);
-
-            const user = await prisma.user.findUnique({
-                where: { email },
-            });
+            const user = await getAuthUser(auth, jwt);
             if (!user) {
                 return new ElysiaCustomStatusResponse("Unauthorized", {
                     summary: "Invalid token",
@@ -36,8 +98,31 @@ export const chatRoutes = new Elysia()
 
             const chats = await prisma.chat.findMany({
                 where: { userId: user.id },
+                orderBy: { id: "desc" },
+                include: {
+                    messages: {
+                        orderBy: { id: "asc" },
+                        take: 1,
+                    },
+                },
             });
-            return chats;
+
+            return chats.map((chat) => {
+                let topic = chat.topic;
+                let pending = false;
+
+                if (!topic) {
+                    const firstMessage = chat.messages[0]?.content;
+                    if (firstMessage) {
+                        topic =
+                            sanitizeTopic(firstMessage.split("\n")[0]) || null;
+                        pending = true;
+                        void generateChatTopic(chat.id);
+                    }
+                }
+
+                return { id: chat.id, topic, pending };
+            });
         },
         {
             cookie: t.Cookie({
@@ -48,21 +133,10 @@ export const chatRoutes = new Elysia()
     .get(
         "/chats/:chatId/messages",
         async ({ params: { chatId }, cookie: { auth }, jwt }) => {
-            const token = auth?.value;
-            if (!token) {
-                return new ElysiaCustomStatusResponse("Unauthorized", {
-                    summary: "Invalid token",
-                });
-            }
-
-            const { email } = await jwt.verify(token);
-
-            const user = await prisma.user.findUnique({
-                where: { email },
-            });
+            const user = await getAuthUser(auth, jwt);
             if (!user) {
                 return new ElysiaCustomStatusResponse("Unauthorized", {
-                    summary: "User not found",
+                    summary: "Invalid token",
                 });
             }
 
@@ -95,21 +169,10 @@ export const chatRoutes = new Elysia()
     .post(
         "/chats/",
         async ({ cookie: { auth }, jwt }) => {
-            const token = auth?.value;
-            if (!token) {
-                return new ElysiaCustomStatusResponse("Unauthorized", {
-                    summary: "Invalid token",
-                });
-            }
-
-            const { email } = await jwt.verify(token);
-
-            const user = await prisma.user.findUnique({
-                where: { email },
-            });
+            const user = await getAuthUser(auth, jwt);
             if (!user) {
                 return new ElysiaCustomStatusResponse("Unauthorized", {
-                    summary: "User not found",
+                    summary: "Invalid token",
                 });
             }
 
@@ -135,21 +198,10 @@ export const chatRoutes = new Elysia()
             jwt,
             request,
         }) => {
-            const token = auth?.value;
-            if (!token) {
-                return new ElysiaCustomStatusResponse("Unauthorized", {
-                    summary: "Invalid token",
-                });
-            }
-
-            const { email } = await jwt.verify(token);
-
-            const user = await prisma.user.findUnique({
-                where: { email },
-            });
+            const user = await getAuthUser(auth, jwt);
             if (!user) {
                 return new ElysiaCustomStatusResponse("Unauthorized", {
-                    summary: "User not found",
+                    summary: "Invalid token",
                 });
             }
 
@@ -210,7 +262,13 @@ export const chatRoutes = new Elysia()
                     },
                     stopWhen: stepCountIs(10),
                     system: `
-          Je bent een leer-assistent voor Talland bakkerij leerlingen. Je haalt ALTIJD informatie op via tools — gebruik NOOIT je eigen kennis.
+          Je bent een professionele leer-assistent voor Talland bakkerij leerlingen. Je communiceert zakelijk, duidelijk en vriendelijk. Je haalt ALTIJD informatie op via tools. Gebruik NOOIT je eigen kennis.
+
+          STIJL:
+          - Gebruik geen emojis, ook niet als ze in tool-output staan
+          - Gebruik geen uitroeptekens of informele taal
+          - Wees beknopt en schrijf in correct Nederlands
+          - Gebruik alleen markdown-opmaak die de leesbaarheid verbetert
 
           REGELS:
           - Gebruik tools direct, zonder te vragen om bevestiging
@@ -221,13 +279,13 @@ export const chatRoutes = new Elysia()
           Recepten: getRecipesCategoriesTool of getRecipesTool → getRecipeTool met slug (nooit display naam)
 
           Recept formaat:
-          ## [emoji] [Naam]
-          ### 🧁 Ingrediënten
+          ## [Naam]
+          ### Ingrediënten
           - **[Groep]**: [hoeveelheid]
-          ### 🔤 Werkwijze
+          ### Werkwijze
           1. **[Eerste twee woorden]** beschrijving.
-          ### 📸 Foto
-          ![Naam](imageUrl) — alleen tonen als beschikbaar
+          ### Foto
+          ![Naam](imageUrl) (alleen tonen als beschikbaar)
 
           Antwoord in het Nederlands, alleen markdown.
         `,
@@ -278,19 +336,7 @@ export const chatRoutes = new Elysia()
                         });
 
                         if (!chat.topic) {
-                            const chatHistory = aiMessages.map((c) =>
-                                c.content.toString(),
-                            );
-                            chatHistory.push(text);
-
-                            const { text: topic } = await generateText({
-                                model: groq("compound-mini"),
-                                prompt: `Genereer een onderwerp van deze conversatie (max 29 chars): ${chatHistory}`,
-                            });
-                            await prisma.chat.update({
-                                where: { id: chat.id },
-                                data: { topic },
-                            });
+                            await generateChatTopic(chat.id);
                         }
                     },
                 });

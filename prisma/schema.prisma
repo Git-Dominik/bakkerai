@@ -15,12 +15,20 @@ datasource db {
 }
 
 model User {
-  id       Int       @id @default(autoincrement())
-  name     String
-  email    String    @unique
-  password String
-  chats    Chat[]
-  messages Message[]
+  id                    Int       @id @default(autoincrement())
+  name                  String
+  email                 String    @unique
+  password              String
+  emailVerified         Boolean   @default(false)
+  verificationCodeHash  String?
+  verificationExpiresAt DateTime?
+  verificationSentAt    DateTime?
+  verificationAttempts  Int       @default(0)
+  resetTokenHash        String?   @unique
+  resetTokenExpiresAt   DateTime?
+  resetRequestedAt      DateTime?
+  chats                 Chat[]
+  messages              Message[]
 }
 
 model Chat {

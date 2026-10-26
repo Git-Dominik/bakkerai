@@ -25,6 +25,7 @@ const isMobileSidebar = window.matchMedia("(max-width: 720px)");
 
 let currentChat;
 let busy = false;
+let topicRefreshTimer;
 let userScrolledUp = false;
 
 window.logout = async function () {
@@ -99,7 +100,7 @@ function scrollToBottom() {
   lechonk.scrollTop = lechonk.scrollHeight;
 }
 
-async function getChats() {
+async function getChats(loadActiveChat = true) {
   const chats = document.getElementById("chats");
   if (!chats) return;
 
@@ -129,7 +130,7 @@ async function getChats() {
 
   parsedChats.forEach((chat) => {
     const chatElement = document.createElement("button");
-    chatElement.textContent = chat.topic ?? `Chat ${chat.id}`;
+    chatElement.textContent = chat.topic ?? "Nieuwe chat";
     chatElement.classList.add("chatButton");
     chatElement.addEventListener("click", () => {
       if (chat.id === currentChat) return;
@@ -153,9 +154,16 @@ async function getChats() {
   newChatElement.addEventListener("click", startNewChat);
   chats.append(newChatElement);
 
-  const chatIdFromPath = getChatIdFromPath();
-  if (chatIdFromPath && parsedChats.some((c) => c.id === chatIdFromPath)) {
-    getMessages(chatIdFromPath);
+  if (loadActiveChat) {
+    const chatIdFromPath = getChatIdFromPath();
+    if (chatIdFromPath && parsedChats.some((c) => c.id === chatIdFromPath)) {
+      getMessages(chatIdFromPath);
+    }
+  }
+
+  window.clearTimeout(topicRefreshTimer);
+  if (parsedChats.some((c) => c.pending)) {
+    topicRefreshTimer = setTimeout(() => getChats(false), 3000);
   }
 }
 
@@ -425,6 +433,7 @@ export async function sendMessage() {
   document.getElementById("busy-warning")?.remove();
   showEmptyState();
   messageHistory.push({ role: "assistant", content: assistantReply });
+  await getChats(false);
 }
 
 input.addEventListener("keypress", sendMessageKeyPress);

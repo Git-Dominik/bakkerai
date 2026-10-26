@@ -1,13 +1,14 @@
 <!doctype html>
-<html lang="en" class="dark-theme">
+<html lang="nl" class="dark-theme">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="preconnect" href="https://api.fontshare.com" />
         <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,600,700&display=swap" />
-        <title>BakkerBot — Login</title>
+        <title>BakkerBot - Inloggen</title>
         <link rel="stylesheet" href="css/base.css" />
         <link rel="stylesheet" href="auth_css/login.css" />
+        <link rel="stylesheet" href="auth_css/auth-common.css" />
     </head>
 
     <body>
@@ -29,15 +30,22 @@
             <h1 class="heading">Welkom <em>terug</em></h1>
             <p class="subheading">Log in met je Talland school-e-mailadres.</p>
 
-            <form class="auth-form" action="/api/login" method="post">
+            <form
+                class="auth-form"
+                id="loginForm"
+                action="/api/login"
+                method="post"
+            >
+                <p id="formMessage" class="form-message" role="alert" hidden></p>
+
                 <div class="field">
-                    <label for="email">E-mailadres</label>
+                    <label for="email">School-e-mailadres</label>
                     <input
                         class="auth-input"
                         id="email"
                         type="email"
                         name="email"
-                        placeholder="naam@school.nl"
+                        placeholder="naam@student.talland.nl"
                         autocomplete="email"
                         required
                     />
@@ -57,16 +65,19 @@
                 </div>
 
                 <div class="forgot-row">
-                    <a href="/forgot-password" class="forgot-link"
-                        >Wachtwoord vergeten?</a
-                    >
+                    <a class="forgot-link" href="/forgot-password">
+                        Wachtwoord vergeten?
+                    </a>
                 </div>
 
-                <button class="auth-button" type="submit">Inloggen</button>
+                <button id="submitBtn" class="auth-button" type="submit">
+                    Inloggen
+                </button>
             </form>
             <p class="register-prompt">
                 Nog geen account? <a href="/register">Account aanmaken</a>
             </p>
         </div>
+        <script src="/auth.js" defer></script>
     </body>
 </html>

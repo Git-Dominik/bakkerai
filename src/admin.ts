@@ -1,8 +1,7 @@
 import { Elysia, t, ElysiaCustomStatusResponse } from "elysia";
 import jwt from "@elysiajs/jwt";
 import { prisma } from "./db";
-
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@bakkerai.nl";
+import { JWT_SECRET, isAdminEmail } from "./config";
 
 const adminGuard = async (auth: { value?: string }, jwt: any) => {
   const token = auth?.value;
@@ -12,14 +11,31 @@ const adminGuard = async (auth: { value?: string }, jwt: any) => {
     });
   }
 
-  const { email } = await jwt.verify(token);
-  if (email !== ADMIN_EMAIL) {
+  let email: unknown;
+
+  try {
+    ({ email } = await jwt.verify(token));
+  } catch {
+    return new ElysiaCustomStatusResponse("Unauthorized", {
+      summary: "Invalid token",
+    });
+  }
+
+  if (typeof email !== "string") {
+    return new ElysiaCustomStatusResponse("Unauthorized", {
+      summary: "Invalid token",
+    });
+  }
+
+  if (!isAdminEmail(email)) {
     return new ElysiaCustomStatusResponse("Forbidden", {
       summary: "Admin access required",
     });
   }
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findFirst({
+    where: { email, emailVerified: true },
+  });
   if (!user) {
     return new ElysiaCustomStatusResponse("Unauthorized", {
       summary: "User not found",
@@ -30,7 +46,7 @@ const adminGuard = async (auth: { value?: string }, jwt: any) => {
 };
 
 export const adminRoutes = new Elysia()
-  .use(jwt({ name: "jwt", secret: "SuperSecretKey" }))
+  .use(jwt({ name: "jwt", secret: JWT_SECRET }))
   .get("/admin/ping", () => ({ ok: true, time: Date.now() }))
   .get(
     "/admin/users",
@@ -46,7 +62,7 @@ export const adminRoutes = new Elysia()
         users.map(async (u) => {
           const [chatCount, messageCount] = await Promise.all([
             prisma.chat.count({ where: { userId: u.id } }),
-            prisma.message.count({ where: { userId: u.id } }),
+            prisma.message.count({ where: { chat: { userId: u.id } } }),
           ]);
           return {
             id: u.id,
@@ -75,7 +91,7 @@ export const adminRoutes = new Elysia()
       try {
         const [targetUser, totalMessages] = await Promise.all([
           prisma.user.findUnique({ where: { id: userId } }),
-          prisma.message.count({ where: { userId } }),
+          prisma.message.count({ where: { chat: { userId } } }),
         ]);
 
         if (!targetUser) {
@@ -96,7 +112,7 @@ export const adminRoutes = new Elysia()
             });
             return {
               id: chat.id,
-              topic: chat.topic || "Untitled",
+              topic: chat.topic || "Zonder onderwerp",
               messageCount: count,
             };
           }),
@@ -157,7 +173,7 @@ export const adminRoutes = new Elysia()
 
       return {
         chatId: chat.id,
-        topic: chat.topic || "Untitled",
+        topic: chat.topic || "Zonder onderwerp",
         user: {
           id: chat.user.id,
           name: chat.user.name,

@@ -1,0 +1,59 @@
+.form-message {
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--grey-light);
+    border-radius: 9px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.form-message.error {
+    border-color: rgb(255 154 170 / 24%);
+    background: rgb(255 110 130 / 10%);
+    color: #ff9aaa;
+}
+
+.form-message.success {
+    border-color: rgb(140 220 180 / 24%);
+    background: rgb(120 210 165 / 10%);
+    color: #9ce0bd;
+}
+
+.field-hint {
+    margin-top: 7px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--grey-text);
+}
+
+.auth-button:disabled,
+.link-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.resend-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--grey-text);
+}
+
+.link-button {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--teal);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.link-button:hover:not(:disabled) {
+    opacity: 0.75;
+}

@@ -3,7 +3,8 @@ import { PrismaBunSqlite } from "prisma-adapter-bun-sqlite";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createGroq } from "@ai-sdk/groq";
 
-const adapter = new PrismaBunSqlite({ url: `${process.env.DATABASE_URL}` });
+const databaseUrl = process.env.DATABASE_URL ?? "file:./dev.db";
+const adapter = new PrismaBunSqlite({ url: databaseUrl });
 export const prisma = new PrismaClient({ adapter });
 
 await prisma.$connect().catch((e) => {

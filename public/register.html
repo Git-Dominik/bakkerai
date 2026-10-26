@@ -5,9 +5,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="preconnect" href="https://api.fontshare.com" />
         <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,600,700&display=swap" />
-        <title>BakkerBot — Registreren</title>
+        <title>BakkerBot - Registreren</title>
         <link rel="stylesheet" href="css/base.css" />
         <link rel="stylesheet" href="auth_css/register.css" />
+        <link rel="stylesheet" href="auth_css/auth-common.css" />
     </head>
     <body class="auth-page">
         <div class="auth-container">
@@ -30,7 +31,14 @@
                 Gebruik je Talland school-e-mailadres om toegang te krijgen.
             </p>
 
-            <form class="auth-form" action="/api/register" method="post">
+            <form
+                class="auth-form"
+                id="registerForm"
+                action="/api/register"
+                method="post"
+            >
+                <p id="formMessage" class="form-message" role="alert" hidden></p>
+
                 <div class="field">
                     <label for="username">Gebruikersnaam</label>
                     <input
@@ -40,21 +48,26 @@
                         name="username"
                         placeholder="voornaam.achternaam"
                         autocomplete="username"
+                        minlength="2"
+                        maxlength="60"
                         required
                     />
                 </div>
 
                 <div class="field">
-                    <label for="email">E-mailadres</label>
+                    <label for="email">School-e-mailadres</label>
                     <input
                         class="auth-input"
                         id="email"
                         type="email"
                         name="email"
-                        placeholder="naam@school.nl"
+                        placeholder="naam@student.talland.nl"
                         autocomplete="email"
                         required
                     />
+                    <p class="field-hint">
+                        Alleen @student.talland.nl adressen worden geaccepteerd.
+                    </p>
                 </div>
 
                 <div class="field">
@@ -64,13 +77,15 @@
                         id="password"
                         type="password"
                         name="password"
-                        placeholder="••••••••"
+                        placeholder="Minimaal 8 tekens"
                         autocomplete="new-password"
+                        minlength="8"
+                        maxlength="128"
                         required
                     />
                 </div>
 
-                <button class="auth-button" type="submit">
+                <button id="submitBtn" class="auth-button" type="submit">
                     Account aanmaken
                 </button>
             </form>
@@ -79,5 +94,6 @@
                 Al een account? <a href="/login">Inloggen</a>
             </p>
         </div>
+        <script src="/auth.js" defer></script>
     </body>
 </html>

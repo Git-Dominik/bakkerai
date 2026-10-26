@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en" class="dark-theme">
+<html lang="nl" class="dark-theme">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="preconnect" href="https://api.fontshare.com" />
         <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,600,700&display=swap" />
-        <title>BakkerBot — Admin</title>
+        <title>BakkerBot - Beheer</title>
         <link rel="stylesheet" href="/css/base.css" />
         <link rel="stylesheet" href="/css/nav.css" />
         <link rel="stylesheet" href="/admin_css/admin.css" />
@@ -41,142 +41,354 @@
             </div>
         </nav>
 
-        <div class="page-header">
-            <h1 class="page-title">Admin Dashboard</h1>
-            <button id="backBtn" class="back-btn" hidden onclick="goBack()">
-                Back
-            </button>
-        </div>
-
-        <main id="content">
-            <div id="loading" class="loading" hidden>Loading...</div>
-            <div id="error" class="error" hidden></div>
-
-            <div id="usersView" hidden>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Chats</th>
-                            <th>Messages</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersTableBody"></tbody>
-                </table>
-            </div>
-
-            <div id="userDetailView" hidden>
-                <div class="user-header">
-                    <h2 id="userDetailName"></h2>
-                    <p id="userDetailEmail"></p>
-                    <p class="stat">
-                        Total messages: <span id="userDetailMessages"></span>
+        <main class="admin-shell">
+            <header class="admin-header">
+                <div class="admin-heading">
+                    <p class="eyebrow">Beheer</p>
+                    <h1 class="page-title">Admin dashboard</h1>
+                    <p class="page-subtitle">
+                        Beheer gebruikers, gesprekken en berichten van
+                        BakkerBot.
                     </p>
                 </div>
-                <h3>Chats</h3>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Topic</th>
-                            <th>Messages</th>
-                        </tr>
-                    </thead>
-                    <tbody id="chatsTableBody"></tbody>
-                </table>
-            </div>
-
-            <div id="chatDetailView" hidden>
-                <div class="chat-header">
-                    <h2 id="chatDetailTopic"></h2>
-                    <p id="chatDetailUser"></p>
+                <div class="header-actions">
+                    <button id="refreshBtn" class="btn btn-ghost" type="button">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" />
+                        </svg>
+                        <span>Vernieuwen</span>
+                    </button>
+                    <button
+                        id="backBtn"
+                        class="btn btn-primary"
+                        type="button"
+                        hidden
+                        onclick="goBack()"
+                    >
+                        Terug
+                    </button>
                 </div>
-                <div id="messagesContainer" class="messages-container"></div>
+            </header>
+
+            <section id="stats" class="stats-grid" hidden aria-label="Overzicht">
+                <article class="stat-card">
+                    <span class="stat-label">Gebruikers</span>
+                    <strong id="statUsers">0</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="stat-label">Gesprekken</span>
+                    <strong id="statChats">0</strong>
+                </article>
+                <article class="stat-card">
+                    <span class="stat-label">Berichten</span>
+                    <strong id="statMessages">0</strong>
+                </article>
+            </section>
+
+            <div id="loading" class="loading" hidden aria-live="polite">
+                <span class="spinner" aria-hidden="true"></span>
+                <span>Laden...</span>
             </div>
+            <div id="error" class="error" role="alert" hidden></div>
+
+            <section id="usersView" hidden>
+                <div class="panel">
+                    <div class="panel-toolbar">
+                        <div>
+                            <h2 class="panel-title">Gebruikers</h2>
+                            <p id="usersCount" class="panel-subtitle"></p>
+                        </div>
+                        <label class="search-field">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="11" cy="11" r="7" />
+                                <path d="m16.5 16.5 4 4" />
+                            </svg>
+                            <input
+                                id="userSearch"
+                                type="search"
+                                placeholder="Zoek op naam of e-mail"
+                                autocomplete="off"
+                                aria-label="Zoek gebruikers"
+                            />
+                        </label>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Gebruiker</th>
+                                    <th>E-mail</th>
+                                    <th class="num">Gesprekken</th>
+                                    <th class="num">Berichten</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody"></tbody>
+                        </table>
+                    </div>
+                    <p id="usersEmpty" class="empty-state" hidden>
+                        Geen gebruikers gevonden.
+                    </p>
+                </div>
+            </section>
+
+            <section id="userDetailView" hidden>
+                <div class="panel detail-summary">
+                    <div class="identity">
+                        <span
+                            id="userDetailAvatar"
+                            class="avatar avatar-lg"
+                            aria-hidden="true"
+                        ></span>
+                        <div class="identity-text">
+                            <p class="eyebrow">Gebruiker</p>
+                            <h2 id="userDetailName"></h2>
+                            <p id="userDetailEmail" class="muted"></p>
+                        </div>
+                    </div>
+                    <div class="mini-stats">
+                        <div class="mini-stat">
+                            <span>Gesprekken</span>
+                            <strong id="userDetailChats">0</strong>
+                        </div>
+                        <div class="mini-stat">
+                            <span>Berichten</span>
+                            <strong id="userDetailMessages">0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-toolbar">
+                        <h3 class="panel-title">Gesprekken</h3>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Onderwerp</th>
+                                    <th class="num">Berichten</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chatsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <p id="chatsEmpty" class="empty-state" hidden>
+                        Deze gebruiker heeft nog geen gesprekken.
+                    </p>
+                </div>
+            </section>
+
+            <section id="chatDetailView" hidden>
+                <div class="panel detail-summary">
+                    <div class="identity-text">
+                        <p class="eyebrow">
+                            Gesprek #<span id="chatDetailId"></span>
+                        </p>
+                        <h2 id="chatDetailTopic"></h2>
+                        <p id="chatDetailUser" class="muted"></p>
+                    </div>
+                    <div class="mini-stats">
+                        <div class="mini-stat">
+                            <span>Berichten</span>
+                            <strong id="chatDetailCount">0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="messagesContainer" class="messages-container"></div>
+                <p id="messagesEmpty" class="empty-state" hidden>
+                    Dit gesprek bevat nog geen berichten.
+                </p>
+            </section>
         </main>
 
         <script>
             const views = ["usersView", "userDetailView", "chatDetailView"];
+            const dateFormatter = new Intl.DateTimeFormat("nl-NL", {
+                dateStyle: "short",
+                timeStyle: "short",
+            });
+
             let viewStack = ["usersView"];
+            let users = [];
+
+            const el = (id) => document.getElementById(id);
 
             function showView(viewId) {
-                views.forEach((v) => {
-                    document.getElementById(v).hidden = v !== viewId;
+                views.forEach((view) => {
+                    el(view).hidden = view !== viewId;
                 });
-                document.getElementById("backBtn").hidden =
-                    viewStack.length <= 1;
+                el("stats").hidden = viewId !== "usersView";
+                el("backBtn").hidden = viewStack.length <= 1;
             }
 
             function goBack() {
-                viewStack.pop();
-                showView(viewStack[viewStack.length - 1]);
-                if (viewStack[viewStack.length - 1] === "usersView") {
-                    loadUsers();
-                }
+                if (viewStack.length > 1) viewStack.pop();
+                const view = viewStack[viewStack.length - 1];
+                showView(view);
+                if (view === "usersView") loadUsers();
             }
 
             function setLoading(loading) {
-                document.getElementById("loading").hidden = !loading;
+                el("loading").hidden = !loading;
             }
 
-            function showError(msg) {
-                const errorEl = document.getElementById("error");
-                if (msg) {
-                    errorEl.textContent = msg;
-                    errorEl.hidden = false;
+            function showError(message) {
+                if (message) {
+                    el("error").textContent = message;
+                    el("error").hidden = false;
                 } else {
-                    errorEl.hidden = true;
+                    el("error").hidden = true;
                 }
             }
 
             async function fetchAdmin(path) {
-                const res = await fetch(path);
-                if (res.status === 401 || res.status === 403) {
-                    const body = await res.text();
-                    showError(`Unauthorized - ${body}`);
+                let response;
+
+                try {
+                    response = await fetch(path, { credentials: "include" });
+                } catch {
+                    showError("Kan geen verbinding maken met de server.");
                     return null;
                 }
-                if (!res.ok) {
-                    const body = await res.text();
-                    showError(`Error ${res.status}: ${body}`);
+
+                if (response.status === 401 || response.status === 403) {
+                    showError("Je hebt geen toegang tot deze gegevens.");
                     return null;
                 }
-                return res.json();
+
+                if (!response.ok) {
+                    showError(`Er ging iets mis (${response.status}).`);
+                    return null;
+                }
+
+                return response.json();
+            }
+
+            function plural(count, singular, pluralForm) {
+                return `${count.toLocaleString("nl-NL")} ${
+                    count === 1 ? singular : pluralForm
+                }`;
+            }
+
+            function initials(value) {
+                const parts = (value || "").trim().split(/\s+/).filter(Boolean);
+                if (parts.length === 0) return "?";
+                if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
+                return (
+                    parts[0].slice(0, 1) + parts[parts.length - 1].slice(0, 1)
+                ).toUpperCase();
+            }
+
+            function escapeHtml(value) {
+                const div = document.createElement("div");
+                div.textContent = value ?? "";
+                return div.innerHTML;
+            }
+
+            function formatTimestamp(timestamp) {
+                const date = new Date(timestamp);
+                return Number.isNaN(date.getTime())
+                    ? "Onbekend"
+                    : dateFormatter.format(date);
+            }
+
+            function formatMessageContent(content) {
+                return escapeHtml(content)
+                    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+                    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+                    .replace(/\n/g, "<br>");
+            }
+
+            function updateStats() {
+                const chats = users.reduce((total, user) => total + user.chatCount, 0);
+                const messages = users.reduce(
+                    (total, user) => total + user.messageCount,
+                    0,
+                );
+
+                el("statUsers").textContent = users.length.toLocaleString("nl-NL");
+                el("statChats").textContent = chats.toLocaleString("nl-NL");
+                el("statMessages").textContent =
+                    messages.toLocaleString("nl-NL");
+            }
+
+            function renderUsers() {
+                const term = el("userSearch").value.trim().toLowerCase();
+                const filtered = users.filter(
+                    (user) =>
+                        user.name.toLowerCase().includes(term) ||
+                        user.email.toLowerCase().includes(term),
+                );
+
+                el("usersCount").textContent =
+                    filtered.length === users.length
+                        ? plural(users.length, "gebruiker", "gebruikers")
+                        : `${filtered.length.toLocaleString("nl-NL")} van ${plural(
+                              users.length,
+                              "gebruiker",
+                              "gebruikers",
+                          )}`;
+
+                const tbody = el("usersTableBody");
+                tbody.innerHTML = "";
+                el("usersEmpty").hidden = filtered.length > 0;
+
+                filtered.forEach((user) => {
+                    const row = document.createElement("tr");
+                    row.className = "clickable-row";
+                    row.tabIndex = 0;
+                    row.setAttribute("role", "button");
+                    row.setAttribute(
+                        "aria-label",
+                        `Open gebruiker ${user.name}`,
+                    );
+                    row.innerHTML = `
+                        <td>
+                            <div class="user-cell">
+                                <span class="avatar" aria-hidden="true">${escapeHtml(
+                                    initials(user.name),
+                                )}</span>
+                                <span class="user-cell-text">
+                                    <span class="user-cell-name">${escapeHtml(
+                                        user.name,
+                                    )}</span>
+                                    <span class="user-cell-id">ID ${user.id}</span>
+                                </span>
+                            </div>
+                        </td>
+                        <td class="muted">${escapeHtml(user.email)}</td>
+                        <td class="num">${user.chatCount.toLocaleString("nl-NL")}</td>
+                        <td class="num">${user.messageCount.toLocaleString("nl-NL")}</td>
+                    `;
+
+                    const open = () => loadUserDetail(user.id);
+                    row.addEventListener("click", open);
+                    row.addEventListener("keydown", (event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            open();
+                        }
+                    });
+
+                    tbody.appendChild(row);
+                });
             }
 
             async function loadUsers() {
                 setLoading(true);
                 showError(null);
-                showView("usersView");
 
-                const users = await fetchAdmin("/api/admin/users");
+                const data = await fetchAdmin("/api/admin/users");
                 setLoading(false);
-                if (!users) return;
+                if (!data) return;
 
-                const tbody = document.getElementById("usersTableBody");
-                tbody.innerHTML = "";
-
-                if (users.length === 0) {
-                    tbody.innerHTML =
-                        '<tr><td colspan="5">No users found</td></tr>';
-                    return;
-                }
-
-                users.forEach((user) => {
-                    const tr = document.createElement("tr");
-                    tr.className = "clickable-row";
-                    tr.onclick = () => loadUserDetail(user.id);
-                    tr.innerHTML = `
-                    <td>${user.id}</td>
-                    <td>${escapeHtml(user.name)}</td>
-                    <td>${escapeHtml(user.email)}</td>
-                    <td>${user.chatCount}</td>
-                    <td>${user.messageCount}</td>
-                `;
-                    tbody.appendChild(tr);
-                });
+                users = data;
+                updateStats();
+                viewStack = ["usersView"];
+                showView("usersView");
+                renderUsers();
             }
 
             async function loadUserDetail(userId) {
@@ -187,36 +399,47 @@
                 setLoading(false);
                 if (!user) return;
 
-                viewStack.push("userDetailView");
-                showView("userDetailView");
+                el("userDetailAvatar").textContent = initials(user.name);
+                el("userDetailName").textContent = user.name;
+                el("userDetailEmail").textContent = user.email;
+                el("userDetailChats").textContent =
+                    user.chats.length.toLocaleString("nl-NL");
+                el("userDetailMessages").textContent =
+                    user.messageCount.toLocaleString("nl-NL");
 
-                document.getElementById("userDetailName").textContent =
-                    user.name;
-                document.getElementById("userDetailEmail").textContent =
-                    user.email;
-                document.getElementById("userDetailMessages").textContent =
-                    user.messageCount;
-
-                const tbody = document.getElementById("chatsTableBody");
+                const tbody = el("chatsTableBody");
                 tbody.innerHTML = "";
-
-                if (user.chats.length === 0) {
-                    tbody.innerHTML =
-                        '<tr><td colspan="3">No chats found</td></tr>';
-                    return;
-                }
+                el("chatsEmpty").hidden = user.chats.length > 0;
 
                 user.chats.forEach((chat) => {
-                    const tr = document.createElement("tr");
-                    tr.className = "clickable-row";
-                    tr.onclick = () => loadChatDetail(chat.id);
-                    tr.innerHTML = `
-                    <td>${chat.id}</td>
-                    <td>${escapeHtml(chat.topic)}</td>
-                    <td>${chat.messageCount}</td>
-                `;
-                    tbody.appendChild(tr);
+                    const row = document.createElement("tr");
+                    row.className = "clickable-row";
+                    row.tabIndex = 0;
+                    row.setAttribute("role", "button");
+                    row.setAttribute(
+                        "aria-label",
+                        `Open gesprek ${chat.topic}`,
+                    );
+                    row.innerHTML = `
+                        <td class="muted">${chat.id}</td>
+                        <td>${escapeHtml(chat.topic)}</td>
+                        <td class="num">${chat.messageCount.toLocaleString("nl-NL")}</td>
+                    `;
+
+                    const open = () => loadChatDetail(chat.id);
+                    row.addEventListener("click", open);
+                    row.addEventListener("keydown", (event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            open();
+                        }
+                    });
+
+                    tbody.appendChild(row);
                 });
+
+                viewStack = ["usersView", "userDetailView"];
+                showView("userDetailView");
             }
 
             async function loadChatDetail(chatId) {
@@ -229,57 +452,52 @@
                 setLoading(false);
                 if (!chat) return;
 
-                viewStack.push("chatDetailView");
-                showView("chatDetailView");
+                el("chatDetailId").textContent = chat.chatId;
+                el("chatDetailTopic").textContent = chat.topic;
+                el("chatDetailUser").textContent = `${chat.user.name} (${chat.user.email})`;
+                el("chatDetailCount").textContent =
+                    chat.messages.length.toLocaleString("nl-NL");
 
-                document.getElementById("chatDetailTopic").textContent =
-                    chat.topic;
-                document.getElementById("chatDetailUser").textContent =
-                    `User: ${escapeHtml(chat.user.name)} (${escapeHtml(chat.user.email)})`;
-
-                const container = document.getElementById("messagesContainer");
+                const container = el("messagesContainer");
                 container.innerHTML = "";
+                el("messagesEmpty").hidden = chat.messages.length > 0;
 
-                if (chat.messages.length === 0) {
-                    container.innerHTML =
-                        '<p class="no-messages">No messages in this chat</p>';
-                    return;
-                }
-
-                chat.messages.forEach((msg) => {
-                    const div = document.createElement("div");
-                    div.className = `message ${msg.role}`;
-                    div.innerHTML = `
-                    <div class="message-header">
-                        <span class="role-badge">${msg.role}</span>
-                        <span class="timestamp">${formatTimestamp(msg.timestamp)}</span>
-                    </div>
-                    <div class="message-content">${formatMessageContent(msg.content)}</div>
-                `;
-                    container.appendChild(div);
+                chat.messages.forEach((message) => {
+                    const isUser = message.role === "user";
+                    const item = document.createElement("article");
+                    item.className = `message ${isUser ? "user" : "assistant"}`;
+                    item.innerHTML = `
+                        <div class="message-header">
+                            <span class="role-badge">${
+                                isUser ? "Gebruiker" : "Assistent"
+                            }</span>
+                            <span class="timestamp">${formatTimestamp(
+                                message.timestamp,
+                            )}</span>
+                        </div>
+                        <div class="message-content">${formatMessageContent(
+                            message.content,
+                        )}</div>
+                    `;
+                    container.appendChild(item);
                 });
+
+                viewStack = ["usersView", "userDetailView", "chatDetailView"];
+                showView("chatDetailView");
             }
 
-            function escapeHtml(str) {
-                const div = document.createElement("div");
-                div.textContent = str;
-                return div.innerHTML;
-            }
+            el("refreshBtn").addEventListener("click", loadUsers);
+            el("userSearch").addEventListener("input", renderUsers);
 
-            function formatTimestamp(ts) {
-                return new Date(ts).toLocaleString();
-            }
-
-            function formatMessageContent(content) {
-                const escaped = escapeHtml(content);
-                return escaped
-                    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                    .replace(/\*(.*?)\*/g, "<em>$1</em>")
-                    .replace(/\n/g, "<br>");
-            }
+            window.logout = async function () {
+                await fetch("/api/logout", {
+                    method: "POST",
+                    credentials: "include",
+                });
+                window.location.href = "/";
+            };
 
             document.addEventListener("DOMContentLoaded", loadUsers);
         </script>
-        <script type="module" src="../script.js"></script>
     </body>
 </html>
