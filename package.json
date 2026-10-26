@@ -5,7 +5,8 @@
         "test": "echo \"Error: no test specified\" && exit 1",
         "dev": "bun run --watch src/index.ts",
         "migrate": "bunx --bun prisma migrate dev && bun generate",
-        "generate": "bunx --bun prisma generate"
+        "generate": "bunx --bun prisma generate",
+        "import:svh": "bun run src/api/svh-import.ts"
     },
     "dependencies": {
         "@ai-sdk/groq": "^3.0.35",

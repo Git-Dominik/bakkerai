@@ -48,3 +48,38 @@ model Message {
   chat      Chat     @relation(fields: [chatId], references: [id])
   chatId    Int
 }
+
+model SvhRecipeCategory {
+  id       Int    @id @default(autoincrement())
+  theme    String
+  name     String
+  recipes  SvhRecipe[]
+
+  @@unique([theme, name])
+}
+
+model SvhRecipe {
+  id          Int              @id @default(autoincrement())
+  slug        String           @unique
+  theme       String
+  category    String
+  name        String
+  personSize  String
+  intro       String?
+  imageUrl    String?
+  blocksJson  String
+  url         String
+  categoryRef SvhRecipeCategory @relation(fields: [theme, category], references: [theme, name])
+}
+
+model SvhLessonPage {
+  id             Int    @id @default(autoincrement())
+  topic          String
+  item           String
+  page           Int
+  pagesAvailable Int
+  url            String
+  magazine       String
+
+  @@unique([topic, item, page])
+}

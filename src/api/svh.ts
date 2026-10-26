@@ -1,7 +1,8 @@
 import { Tool, tool } from "ai";
 import { Mutex } from "async-mutex";
-import { firefox, devices, Cookie } from "playwright";
+import { firefox, devices, Cookie, Page } from "playwright";
 import z from "zod";
+import { prisma } from "../db";
 
 const browser = await firefox.launch({ headless: true });
 const lessonYear = "Leerjaar-1-uitvoerend-en-zelfstandig";
@@ -33,6 +34,44 @@ export type LessonElement =
 export type RecipeCategory = string;
 
 const mutex = new Mutex();
+
+// Keep requests to SVH serialized and spaced out, including concurrent app users.
+const minimumNavigationGapMs = 2500;
+let lastNavigationAt = 0;
+let navigationQueue: Promise<void> = Promise.resolve();
+const cookieVerificationCacheMs = 10 * 60 * 1000;
+let cookieVerifiedUntil = 0;
+
+async function gotoSource(page: Page, url: string) {
+  const queuedNavigation = navigationQueue.then(async () => {
+    for (let attempt = 1; ; attempt++) {
+      const waitMs = Math.max(
+        0,
+        minimumNavigationGapMs - (Date.now() - lastNavigationAt),
+      );
+      if (waitMs) await new Promise((resolve) => setTimeout(resolve, waitMs));
+      lastNavigationAt = Date.now();
+
+      try {
+        // Waiting for every resource to finish can make Firefox report
+        // NS_ERROR_ABORT when the site redirects or a background request is
+        // cancelled. The DOM is sufficient for the scrapers below.
+        await page.goto(url, { waitUntil: "domcontentloaded" });
+        return;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (!message.includes("NS_ERROR_ABORT") || attempt >= 3) throw error;
+
+        console.warn(
+          `[svh] navigation aborted; retrying (${attempt}/2): ${url}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+  });
+  navigationQueue = queuedNavigation.catch(() => {});
+  await queuedNavigation;
+}
 
 const email = Bun.env.SVH_SERVICE_EMAIL;
 const password = Bun.env.SVH_SERVICE_PASSWORD;
@@ -127,7 +166,7 @@ export async function verifyCookie(cookie: Cookie): Promise<boolean> {
     await context.setStorageState("storage.json");
     const page = await context.newPage();
 
-    await page.goto("https://svhbakkerstalent.nl/Recepten");
+    await gotoSource(page, "https://svhbakkerstalent.nl/Recepten");
     await page.waitForLoadState("domcontentloaded");
 
     const { pathname } = new URL(page.url());
@@ -154,18 +193,26 @@ export async function login(email: string, password: string) {
     if (await Bun.file("storage.json").exists()) {
       await context.setStorageState("storage.json");
       const crCookie = (await context.cookies()).find((c) => c.name === "CR");
-      if (crCookie && (await verifyCookie(crCookie))) {
-        return;
-      } else {
-        console.log("[login] cookie invalid or expired, getting new cookie");
+      if (crCookie && crCookie.expires >= Date.now() / 1000) {
+        if (Date.now() < cookieVerifiedUntil) return;
+        if (await verifyCookie(crCookie)) {
+          cookieVerifiedUntil = Math.min(
+            crCookie.expires * 1000,
+            Date.now() + cookieVerificationCacheMs,
+          );
+          return;
+        }
       }
+
+      cookieVerifiedUntil = 0;
+      console.log("[login] cookie invalid or expired, getting new cookie");
     } else {
       console.log("[login] no storage.json found, performing full login");
     }
 
     const page = await context.newPage();
     console.log("[login] navigating to login page");
-    await page.goto("https://svhbakkerstalent.nl/login.html");
+    await gotoSource(page, "https://svhbakkerstalent.nl/login.html");
 
     await page.fill("input[id='email']", email);
     await page.fill("input[class='password']", password);
@@ -175,6 +222,13 @@ export async function login(email: string, password: string) {
     await page.click("input[type='submit']");
 
     await context.storageState({ path: "storage.json" });
+    const loggedInCookie = (await context.cookies()).find((c) => c.name === "CR");
+    cookieVerifiedUntil = loggedInCookie
+      ? Math.min(
+          loggedInCookie.expires * 1000,
+          Date.now() + cookieVerificationCacheMs,
+        )
+      : 0;
     console.log("[login] login successful, storage saved");
   } finally {
     try {
@@ -187,7 +241,15 @@ export async function login(email: string, password: string) {
 
 export async function getRecipesCategories(
   recipeTheme: RecipeTheme,
+  useCache = true,
 ): Promise<RecipeCategory[]> {
+  const cachedCategories = useCache ? await prisma.svhRecipeCategory.findMany({
+    where: { theme: recipeTheme },
+    select: { name: true },
+    orderBy: { name: "asc" },
+  }) : [];
+  if (cachedCategories.length) return cachedCategories.map(({ name }) => name);
+
   console.log(`[getRecipesCategories] starting - theme: ${recipeTheme}`);
   await login(_email, _password);
 
@@ -196,7 +258,7 @@ export async function getRecipesCategories(
 
   const page = await context.newPage();
   try {
-    await page.goto("https://svhbakkerstalent.nl/Recepten");
+    await gotoSource(page, "https://svhbakkerstalent.nl/Recepten");
 
     let categoryNames: string[] = [];
 
@@ -245,7 +307,20 @@ export async function getRecipesCategories(
 export async function getRecipes(
   recipeTheme: RecipeTheme,
   recipeCategory: RecipeCategory,
+  useCache = true,
 ): Promise<string[]> {
+  const categoryCached = useCache ? await prisma.svhRecipeCategory.findUnique({
+    where: { theme_name: { theme: recipeTheme, name: recipeCategory } },
+  }) : null;
+  if (categoryCached) {
+    const recipes = await prisma.svhRecipe.findMany({
+      where: { theme: recipeTheme, category: recipeCategory },
+      select: { slug: true },
+      orderBy: { name: "asc" },
+    });
+    return recipes.map(({ slug }) => slug);
+  }
+
   console.log(
     `[getRecipes] starting - theme: ${recipeTheme}, category: ${recipeCategory}`,
   );
@@ -256,7 +331,7 @@ export async function getRecipes(
 
   const page = await context.newPage();
   try {
-    await page.goto("https://svhbakkerstalent.nl/Recepten");
+    await gotoSource(page, "https://svhbakkerstalent.nl/Recepten");
 
     let recipeNames: string[] = [];
 
@@ -313,6 +388,21 @@ export async function getRecipe(recipeName: string): Promise<Recipe> {
     throw new Error(`Invalid slug, contains spaces: ${recipeName}`);
   }
 
+  const cachedRecipe = await prisma.svhRecipe.findUnique({
+    where: { slug: recipeName },
+  });
+  if (cachedRecipe) {
+    return {
+      name: cachedRecipe.name,
+      personSize: cachedRecipe.personSize,
+      slug: cachedRecipe.slug,
+      intro: cachedRecipe.intro ?? undefined,
+      imageUrl: cachedRecipe.imageUrl ?? undefined,
+      blocks: JSON.parse(cachedRecipe.blocksJson) as string[],
+      url: cachedRecipe.url,
+    };
+  }
+
   console.log(`[getRecipe] starting - recipeName: ${recipeName}`);
   await login(_email, _password);
 
@@ -321,7 +411,7 @@ export async function getRecipe(recipeName: string): Promise<Recipe> {
 
   const page = await context.newPage();
   try {
-    await page.goto(
+    await gotoSource(page,
       `https://svhbakkerstalent.nl/Recepten/Productkaarten/${recipeName}`,
     );
 
@@ -385,7 +475,14 @@ export async function getRecipe(recipeName: string): Promise<Recipe> {
   }
 }
 
-export async function getLessonTopics(): Promise<string[]> {
+export async function getLessonTopics(useCache = true): Promise<string[]> {
+  const cachedTopics = useCache ? await prisma.svhLessonPage.findMany({
+    distinct: ["topic"],
+    select: { topic: true },
+    orderBy: { topic: "asc" },
+  }) : [];
+  if (cachedTopics.length) return cachedTopics.map(({ topic }) => topic);
+
   await login(_email, _password);
 
   const context = await browser.newContext(devices["Desktop Firefox"]);
@@ -393,7 +490,7 @@ export async function getLessonTopics(): Promise<string[]> {
 
   const page = await context.newPage();
   try {
-    await page.goto(`https://svhbakkerstalent.nl/Leerlijn/${lessonYear}`);
+    await gotoSource(page, `https://svhbakkerstalent.nl/Leerlijn/${lessonYear}`);
 
     const seen = new Set<string>();
 
@@ -413,7 +510,15 @@ export async function getLessonTopics(): Promise<string[]> {
   }
 }
 
-export async function getLessonItems(topic: string): Promise<string[]> {
+export async function getLessonItems(topic: string, useCache = true): Promise<string[]> {
+  const cachedItems = useCache ? await prisma.svhLessonPage.findMany({
+    where: { topic },
+    distinct: ["item"],
+    select: { item: true },
+    orderBy: { item: "asc" },
+  }) : [];
+  if (cachedItems.length) return cachedItems.map(({ item }) => item);
+
   await login(_email, _password);
 
   const context = await browser.newContext(devices["Desktop Firefox"]);
@@ -421,7 +526,7 @@ export async function getLessonItems(topic: string): Promise<string[]> {
 
   const page = await context.newPage();
   try {
-    await page.goto(`https://svhbakkerstalent.nl/Leerlijn/${lessonYear}`);
+    await gotoSource(page, `https://svhbakkerstalent.nl/Leerlijn/${lessonYear}`);
 
     const seen = new Set<string>();
 
@@ -449,6 +554,17 @@ export async function getLessonPage(
   offset: number = 0,
   size: number = 1500,
 ): Promise<LessonPage> {
+  const cachedPage = await prisma.svhLessonPage.findUnique({
+    where: { topic_item_page: { topic: lessonTopic, item: lessonItem, page: lessonPage } },
+  });
+  if (cachedPage) {
+    return {
+      url: cachedPage.url,
+      pagesAvailable: cachedPage.pagesAvailable,
+      magazine: cachedPage.magazine.substring(offset, offset + size),
+    };
+  }
+
   await login(_email, _password);
 
   const context = await browser.newContext(devices["Desktop Firefox"]);
@@ -456,7 +572,7 @@ export async function getLessonPage(
 
   const page = await context.newPage();
   try {
-    await page.goto(
+    await gotoSource(page,
       `https://svhbakkerstalent.nl/Leerlijn/${lessonYear}/${lessonTopic}/${lessonItem}/Pagina-${lessonPage}.html`,
     );
 
